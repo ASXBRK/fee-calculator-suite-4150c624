@@ -1,10 +1,13 @@
 import { Card } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Administrator } from './types';
 
 interface SMSFFeesCardProps {
-  isSMSF: boolean;
-  setIsSMSF: (value: boolean) => void;
+  isSMSF: boolean | null;
+  setIsSMSF: (value: boolean | null) => void;
+  administrator: Administrator;
+  setAdministrator: (value: Administrator) => void;
   fees: {
     administrationFee: number;
     auditFee: number;
@@ -13,7 +16,7 @@ interface SMSFFeesCardProps {
   } | null;
 }
 
-export function SMSFFeesCard({ isSMSF, setIsSMSF, fees }: SMSFFeesCardProps) {
+export function SMSFFeesCard({ isSMSF, setIsSMSF, administrator, setAdministrator, fees }: SMSFFeesCardProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
@@ -24,23 +27,61 @@ export function SMSFFeesCard({ isSMSF, setIsSMSF, fees }: SMSFFeesCardProps) {
   };
 
   return (
-    <Card className="p-6 gradient-card shadow-card border-border">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-display text-xl font-semibold text-foreground">SMSF Fees</h3>
-        <div className="flex items-center gap-3">
-          <Label htmlFor="smsf-toggle" className="text-sm text-muted-foreground">
-            Include SMSF
-          </Label>
-          <Switch
-            id="smsf-toggle"
-            checked={isSMSF}
-            onCheckedChange={setIsSMSF}
-          />
-        </div>
+    <Card className="p-6 gradient-card shadow-card border-border animate-fade-in">
+      <h3 className="font-display text-xl font-semibold text-foreground mb-6">SMSF</h3>
+
+      {/* SMSF Yes/No Question */}
+      <div className="mb-6">
+        <Label className="text-foreground font-medium mb-3 block">Do you have an SMSF?</Label>
+        <RadioGroup
+          value={isSMSF === null ? '' : isSMSF ? 'yes' : 'no'}
+          onValueChange={(value) => {
+            setIsSMSF(value === 'yes');
+            if (value === 'no') {
+              setAdministrator(null);
+            }
+          }}
+          className="flex gap-6"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="yes" id="smsf-yes" />
+            <Label htmlFor="smsf-yes" className="cursor-pointer">Yes</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="no" id="smsf-no" />
+            <Label htmlFor="smsf-no" className="cursor-pointer">No</Label>
+          </div>
+        </RadioGroup>
       </div>
 
-      {fees ? (
-        <div className="space-y-3 animate-fade-in">
+      {/* Administrator Question - Only show if SMSF is Yes */}
+      {isSMSF === true && (
+        <div className="animate-fade-in pt-4 border-t border-border">
+          <Label className="text-foreground font-medium mb-3 block">Who is the administrator?</Label>
+          <RadioGroup
+            value={administrator || ''}
+            onValueChange={(value) => setAdministrator(value as Administrator)}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="heffron" id="admin-heffron" />
+              <Label htmlFor="admin-heffron" className="cursor-pointer">Heffron</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="ryans" id="admin-ryans" />
+              <Label htmlFor="admin-ryans" className="cursor-pointer">Ryans</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="other" id="admin-other" />
+              <Label htmlFor="admin-other" className="cursor-pointer">Other</Label>
+            </div>
+          </RadioGroup>
+        </div>
+      )}
+
+      {/* Fee Breakdown - Only show if administrator is selected */}
+      {isSMSF === true && administrator && fees && fees.total > 0 && (
+        <div className="space-y-3 animate-fade-in mt-6 pt-4 border-t border-border">
           <div className="flex justify-between items-center py-2">
             <span className="text-muted-foreground">Administration Fee</span>
             <span className="font-medium text-foreground">{formatCurrency(fees.administrationFee)}</span>
@@ -58,8 +99,12 @@ export function SMSFFeesCard({ isSMSF, setIsSMSF, fees }: SMSFFeesCardProps) {
             <span className="text-lg font-semibold text-primary">{formatCurrency(fees.total)} p.a.</span>
           </div>
         </div>
-      ) : (
-        <p className="text-muted-foreground text-sm">Enable SMSF to see fee breakdown</p>
+      )}
+
+      {isSMSF === true && administrator === 'other' && (
+        <p className="text-sm text-muted-foreground mt-4 animate-fade-in">
+          Please enter your administrator fees manually or contact us for assistance.
+        </p>
       )}
     </Card>
   );
