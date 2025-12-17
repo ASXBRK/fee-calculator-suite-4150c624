@@ -26,18 +26,33 @@ export interface FeeBreakdown {
   bpfAmount: number;
 }
 
-export const FEE_TIERS = [
-  { min: 0, max: 1000000, rate: 0.012 },
-  { min: 1000001, max: Infinity, rate: 0.007 },
-];
+export interface FeeTier {
+  min: number;
+  max: number;
+  rate: number;
+}
+
+export type Administrator = 'heffron' | 'ryans' | 'other' | null;
 
 export const SHAW_SPLIT = 0.4;
 export const BPF_SPLIT = 0.6;
 
-export const DEFAULT_SMSF_FEES: SMSFFees = {
+export const HEFFRON_SMSF_FEES: SMSFFees = {
   administrationFee: 2010,
   auditFee: 585,
   asicAgentFee: 210,
+};
+
+export const RYANS_SMSF_FEES: SMSFFees = {
+  administrationFee: 1800,
+  auditFee: 550,
+  asicAgentFee: 200,
+};
+
+export const OTHER_SMSF_FEES: SMSFFees = {
+  administrationFee: 0,
+  auditFee: 0,
+  asicAgentFee: 0,
 };
 
 export const DOCUMENT_SERVICES: DocumentService[] = [

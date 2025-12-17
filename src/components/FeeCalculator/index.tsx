@@ -7,7 +7,7 @@ import { FeeBreakdownCard } from './FeeBreakdownCard';
 import { SMSFFeesCard } from './SMSFFeesCard';
 import { DocumentServicesCard } from './DocumentServicesCard';
 import { TotalFeesCard } from './TotalFeesCard';
-import { FeeTierInfo } from './FeeTierInfo';
+import { FeeTierSettings } from './FeeTierSettings';
 
 export function FeeCalculator() {
   const {
@@ -15,8 +15,16 @@ export function FeeCalculator() {
     addPortfolio,
     removePortfolio,
     updatePortfolio,
+    isGstExcluding,
+    setIsGstExcluding,
+    numberOfTiers,
+    setNumberOfTiers,
+    tierRates,
+    updateTierRate,
     isSMSF,
     setIsSMSF,
+    administrator,
+    setAdministrator,
     documentServices,
     toggleDocumentService,
     updateServiceQuantity,
@@ -25,6 +33,15 @@ export function FeeCalculator() {
     documentServiceTotal,
     totalFees,
   } = useCalculator();
+
+  // Check if portfolio has been filled (balance > 0)
+  const hasPortfolioBalance = portfolios.some(p => p.balance > 0);
+  
+  // Check if fee tiers have been configured
+  const hasTierConfiguration = tierRates.some(r => r > 0);
+  
+  // Check if SMSF question has been answered
+  const hasSMSFAnswer = isSMSF !== null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,66 +71,82 @@ export function FeeCalculator() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Inputs */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Portfolio Balances */}
-            <Card className="p-6 gradient-card shadow-card border-border">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display text-2xl font-semibold text-foreground">
-                  Portfolio Balances
-                </h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={addPortfolio}
-                  className="border-primary/30 text-primary hover:bg-primary/5"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Portfolio
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {portfolios.map((portfolio) => (
-                  <PortfolioInput
-                    key={portfolio.id}
-                    portfolio={portfolio}
-                    onUpdate={updatePortfolio}
-                    onRemove={removePortfolio}
-                    canRemove={portfolios.length > 1}
-                  />
-                ))}
-              </div>
-
-              <div className="mt-6">
-                <FeeTierInfo />
-              </div>
-            </Card>
-
-            {/* SMSF Fees */}
-            <SMSFFeesCard 
-              isSMSF={isSMSF}
-              setIsSMSF={setIsSMSF}
-              fees={smsfFees}
+            {/* Step 1: Fee Structure Settings */}
+            <FeeTierSettings
+              isGstExcluding={isGstExcluding}
+              setIsGstExcluding={setIsGstExcluding}
+              numberOfTiers={numberOfTiers}
+              setNumberOfTiers={setNumberOfTiers}
+              tierRates={tierRates}
+              updateTierRate={updateTierRate}
             />
 
-            {/* Document Services */}
-            <DocumentServicesCard
-              services={documentServices}
-              onToggle={toggleDocumentService}
-              onQuantityChange={updateServiceQuantity}
-              total={documentServiceTotal}
-            />
+            {/* Step 2: Portfolio Balances - Show after tier config */}
+            {hasTierConfiguration && (
+              <Card className="p-6 gradient-card shadow-card border-border animate-fade-in">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-2xl font-semibold text-foreground">
+                    Portfolio Balances
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={addPortfolio}
+                    className="border-primary/30 text-primary hover:bg-primary/5"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Portfolio
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {portfolios.map((portfolio) => (
+                    <PortfolioInput
+                      key={portfolio.id}
+                      portfolio={portfolio}
+                      onUpdate={updatePortfolio}
+                      onRemove={removePortfolio}
+                      canRemove={portfolios.length > 1}
+                    />
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Step 3: SMSF - Show after portfolio balance entered */}
+            {hasTierConfiguration && hasPortfolioBalance && (
+              <SMSFFeesCard 
+                isSMSF={isSMSF}
+                setIsSMSF={setIsSMSF}
+                administrator={administrator}
+                setAdministrator={setAdministrator}
+                fees={smsfFees}
+              />
+            )}
+
+            {/* Step 4: Document Services - Only show if Heffron is selected */}
+            {hasTierConfiguration && hasPortfolioBalance && hasSMSFAnswer && administrator === 'heffron' && (
+              <DocumentServicesCard
+                services={documentServices}
+                onToggle={toggleDocumentService}
+                onQuantityChange={updateServiceQuantity}
+                total={documentServiceTotal}
+              />
+            )}
           </div>
 
           {/* Right Column - Results */}
           <div className="space-y-6">
             <div className="lg:sticky lg:top-8 space-y-6">
               <FeeBreakdownCard breakdown={feeBreakdown} />
-              <TotalFeesCard
-                ongoingFee={feeBreakdown.ongoingFeeAmount}
-                smsfFees={smsfFees?.total || 0}
-                documentServices={documentServiceTotal}
-                total={totalFees}
-              />
+              {hasPortfolioBalance && (
+                <TotalFeesCard
+                  ongoingFee={feeBreakdown.ongoingFeeAmount}
+                  smsfFees={smsfFees?.total || 0}
+                  documentServices={documentServiceTotal}
+                  total={totalFees}
+                />
+              )}
             </div>
           </div>
         </div>
