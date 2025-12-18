@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Plus, Calculator } from 'lucide-react';
 import { useCalculator } from './useCalculator';
 import { PortfolioInput } from './PortfolioInput';
@@ -8,12 +9,16 @@ import { SMSFFeesCard } from './SMSFFeesCard';
 import { DocumentServicesCard } from './DocumentServicesCard';
 import { TotalFeesCard } from './TotalFeesCard';
 import { FeeTierSettings } from './FeeTierSettings';
+
 export function FeeCalculator() {
   const {
     portfolios,
     addPortfolio,
     removePortfolio,
     updatePortfolio,
+    chargeAcceleratorFees,
+    setChargeAcceleratorFees,
+    portfolioTotals,
     isGstExcluding,
     setIsGstExcluding,
     numberOfTiers,
@@ -33,14 +38,29 @@ export function FeeCalculator() {
     totalFees
   } = useCalculator();
 
+  // Check if fee tiers have been configured
+  const hasTierConfiguration = tierRates.some(r => r > 0);
+  
+  // Check if accelerator question has been answered
+  const hasAcceleratorAnswer = chargeAcceleratorFees !== null;
+  
+  // Show accelerator input if answered "No" (fees NOT charged on accelerator)
+  const showAcceleratorInput = chargeAcceleratorFees === false;
+
   // Check if portfolio has been filled (balance > 0)
   const hasPortfolioBalance = portfolios.some(p => p.balance > 0);
 
-  // Check if fee tiers have been configured
-  const hasTierConfiguration = tierRates.some(r => r > 0);
-
   // Check if SMSF question has been answered
   const hasSMSFAnswer = isSMSF !== null;
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
   return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="gradient-primary text-primary-foreground py-12 md:py-16 relative overflow-hidden">
@@ -66,8 +86,39 @@ export function FeeCalculator() {
             {/* Step 1: Fee Structure Settings */}
             <FeeTierSettings isGstExcluding={isGstExcluding} setIsGstExcluding={setIsGstExcluding} numberOfTiers={numberOfTiers} setNumberOfTiers={setNumberOfTiers} tierRates={tierRates} updateTierRate={updateTierRate} />
 
-            {/* Step 2: Portfolio Balances - Show after tier config */}
-            {hasTierConfiguration && <Card className="p-6 gradient-card shadow-card border-border animate-fade-in">
+            {/* Step 2: Accelerator Balance Question - Show after tier config */}
+            {hasTierConfiguration && (
+              <Card className="p-6 gradient-card shadow-card border-border animate-fade-in">
+                <h3 className="font-display text-xl font-semibold text-foreground mb-4">
+                  Are fees charged on Accelerator balances?
+                </h3>
+                <div className="flex gap-3">
+                  <Button
+                    variant={chargeAcceleratorFees === true ? 'default' : 'outline'}
+                    onClick={() => setChargeAcceleratorFees(true)}
+                    className={chargeAcceleratorFees === true ? '' : 'border-primary/30 text-primary hover:bg-primary/5'}
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    variant={chargeAcceleratorFees === false ? 'default' : 'outline'}
+                    onClick={() => setChargeAcceleratorFees(false)}
+                    className={chargeAcceleratorFees === false ? '' : 'border-primary/30 text-primary hover:bg-primary/5'}
+                  >
+                    No
+                  </Button>
+                </div>
+                {chargeAcceleratorFees === false && (
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Fees will be charged on total portfolio value less Accelerator balance
+                  </p>
+                )}
+              </Card>
+            )}
+
+            {/* Step 3: Portfolio Balances - Show after accelerator question answered */}
+            {hasTierConfiguration && hasAcceleratorAnswer && (
+              <Card className="p-6 gradient-card shadow-card border-border animate-fade-in">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="font-display text-2xl font-semibold text-foreground">
                     Portfolio Balances
@@ -78,16 +129,58 @@ export function FeeCalculator() {
                   </Button>
                 </div>
 
-                <div className="space-y-4">
-                  {portfolios.map(portfolio => <PortfolioInput key={portfolio.id} portfolio={portfolio} onUpdate={updatePortfolio} onRemove={removePortfolio} canRemove={portfolios.length > 1} />)}
+                {/* Column headers */}
+                <div className="flex items-center gap-3 mb-3 text-sm text-muted-foreground">
+                  <div className="w-32">Name</div>
+                  <div className="flex-1 text-right">Total Value</div>
+                  {showAcceleratorInput && <div className="flex-1 text-right">Accelerator Balance</div>}
+                  <div className="w-10"></div>
                 </div>
-              </Card>}
 
-            {/* Step 3: SMSF - Show after portfolio balance entered */}
-            {hasTierConfiguration && hasPortfolioBalance && <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} />}
+                <div className="space-y-4">
+                  {portfolios.map(portfolio => (
+                    <PortfolioInput
+                      key={portfolio.id}
+                      portfolio={portfolio}
+                      onUpdate={updatePortfolio}
+                      onRemove={removePortfolio}
+                      canRemove={portfolios.length > 1}
+                      showAccelerator={showAcceleratorInput}
+                    />
+                  ))}
+                </div>
 
-            {/* Step 4: Document Services - Only show if Heffron is selected */}
-            {hasTierConfiguration && hasPortfolioBalance && hasSMSFAnswer && administrator === 'heffron' && <DocumentServicesCard services={documentServices} onToggle={toggleDocumentService} onQuantityChange={updateServiceQuantity} total={documentServiceTotal} />}
+                {/* Running totals */}
+                <div className="mt-6 pt-4 border-t border-border space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total Portfolio Value</span>
+                    <span className="font-medium text-foreground">{formatCurrency(portfolioTotals.totalBalance)}</span>
+                  </div>
+                  {showAcceleratorInput && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total Accelerator Balance</span>
+                        <span className="font-medium text-foreground">{formatCurrency(portfolioTotals.totalAccelerator)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-semibold">
+                        <span className="text-foreground">Feeable Balance</span>
+                        <span className="text-primary">{formatCurrency(portfolioTotals.feeableBalance)}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {/* Step 4: SMSF - Show after portfolio balance entered */}
+            {hasTierConfiguration && hasAcceleratorAnswer && hasPortfolioBalance && (
+              <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} />
+            )}
+
+            {/* Step 5: Document Services - Only show if Heffron is selected */}
+            {hasTierConfiguration && hasAcceleratorAnswer && hasPortfolioBalance && hasSMSFAnswer && administrator === 'heffron' && (
+              <DocumentServicesCard services={documentServices} onToggle={toggleDocumentService} onQuantityChange={updateServiceQuantity} total={documentServiceTotal} />
+            )}
           </div>
 
           {/* Right Column - Results */}

@@ -2,6 +2,7 @@ export interface Portfolio {
   id: string;
   name: string;
   balance: number;
+  acceleratorBalance: number;
 }
 
 export interface DocumentService {
