@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { 
   Portfolio, 
+  Contribution,
   DocumentService, 
   FeeBreakdown, 
   FeeTier,
@@ -20,6 +21,11 @@ export function useCalculator() {
   
   // Accelerator balance settings
   const [chargeAcceleratorFees, setChargeAcceleratorFees] = useState<boolean | null>(null);
+  
+  // Contributions/Rollovers
+  const [contributions, setContributions] = useState<Contribution[]>([
+    { id: '1', type: 'rollover', amount: 0, div293Applicable: null },
+  ]);
   
   // GST settings
   const [isGstExcluding, setIsGstExcluding] = useState(false);
@@ -71,6 +77,48 @@ export function useCalculator() {
     setTierRates(newRates);
   };
 
+  // Contribution functions
+  const addContribution = () => {
+    const newId = (contributions.length + 1).toString();
+    setContributions([...contributions, { id: newId, type: 'rollover', amount: 0, div293Applicable: null }]);
+  };
+
+  const removeContribution = (id: string) => {
+    if (contributions.length > 1) {
+      setContributions(contributions.filter(c => c.id !== id));
+    }
+  };
+
+  const updateContribution = (id: string, updates: Partial<Contribution>) => {
+    setContributions(contributions.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  // Calculate feeable amount from contributions
+  const contributionTotals = useMemo(() => {
+    let totalContributions = 0;
+    let feeableContributions = 0;
+
+    contributions.forEach(c => {
+      totalContributions += c.amount;
+      
+      if (c.type === 'rollover' || c.type === 'ncc') {
+        // 100% goes to feeable balance
+        feeableContributions += c.amount;
+      } else if (c.type === 'concessional') {
+        if (c.div293Applicable === true) {
+          // 70% goes to feeable balance (30% tax)
+          feeableContributions += c.amount * 0.7;
+        } else if (c.div293Applicable === false) {
+          // 85% goes to feeable balance (15% tax)
+          feeableContributions += c.amount * 0.85;
+        }
+        // If div293Applicable is null, don't add to feeable yet
+      }
+    });
+
+    return { totalContributions, feeableContributions };
+  }, [contributions]);
+
   const toggleDocumentService = (id: string) => {
     setDocumentServices(documentServices.map(s => 
       s.id === id ? { ...s, selected: !s.selected } : s
@@ -113,9 +161,11 @@ export function useCalculator() {
     const totalAccelerator = portfolios.reduce((sum, p) => sum + p.acceleratorBalance, 0);
     // If chargeAcceleratorFees is true (yes, charge fees), use full balance
     // If chargeAcceleratorFees is false (no, exclude), subtract accelerator
-    const feeableBalance = chargeAcceleratorFees === false ? totalBalance - totalAccelerator : totalBalance;
-    return { totalBalance, totalAccelerator, feeableBalance };
-  }, [portfolios, chargeAcceleratorFees]);
+    const portfolioFeeableBalance = chargeAcceleratorFees === false ? totalBalance - totalAccelerator : totalBalance;
+    // Add feeable contributions
+    const feeableBalance = portfolioFeeableBalance + contributionTotals.feeableContributions;
+    return { totalBalance, totalAccelerator, feeableBalance, portfolioFeeableBalance };
+  }, [portfolios, chargeAcceleratorFees, contributionTotals]);
 
   const feeBreakdown = useMemo((): FeeBreakdown => {
     const { totalBalance, feeableBalance } = portfolioTotals;
@@ -177,6 +227,11 @@ export function useCalculator() {
     updatePortfolio,
     chargeAcceleratorFees,
     setChargeAcceleratorFees,
+    contributions,
+    addContribution,
+    removeContribution,
+    updateContribution,
+    contributionTotals,
     portfolioTotals,
     isGstExcluding,
     setIsGstExcluding,

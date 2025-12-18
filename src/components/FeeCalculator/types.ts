@@ -5,6 +5,15 @@ export interface Portfolio {
   acceleratorBalance: number;
 }
 
+export type ContributionType = 'rollover' | 'ncc' | 'concessional';
+
+export interface Contribution {
+  id: string;
+  type: ContributionType;
+  amount: number;
+  div293Applicable: boolean | null; // Only relevant for concessional
+}
+
 export interface DocumentService {
   id: string;
   name: string;
