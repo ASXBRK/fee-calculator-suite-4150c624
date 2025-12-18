@@ -8,21 +8,18 @@ interface PortfolioInputProps {
   onUpdate: (id: string, updates: Partial<Portfolio>) => void;
   onRemove: (id: string) => void;
   canRemove: boolean;
+  showAccelerator: boolean;
 }
 
-export function PortfolioInput({ portfolio, onUpdate, onRemove, canRemove }: PortfolioInputProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
+export function PortfolioInput({ portfolio, onUpdate, onRemove, canRemove, showAccelerator }: PortfolioInputProps) {
   const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9]/g, '');
     onUpdate(portfolio.id, { balance: parseInt(value) || 0 });
+  };
+
+  const handleAcceleratorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    onUpdate(portfolio.id, { acceleratorBalance: parseInt(value) || 0 });
   };
 
   return (
@@ -31,19 +28,31 @@ export function PortfolioInput({ portfolio, onUpdate, onRemove, canRemove }: Por
         type="text"
         value={portfolio.name}
         onChange={(e) => onUpdate(portfolio.id, { name: e.target.value })}
-        className="w-40 bg-card border-border"
+        className="w-32 bg-card border-border"
         placeholder="Portfolio name"
       />
       <div className="relative flex-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
         <Input
           type="text"
           value={portfolio.balance.toLocaleString()}
           onChange={handleBalanceChange}
-          className="pl-8 bg-card border-border text-right font-medium"
-          placeholder="0"
+          className="pl-7 bg-card border-border text-right font-medium"
+          placeholder="Total value"
         />
       </div>
+      {showAccelerator && (
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+          <Input
+            type="text"
+            value={portfolio.acceleratorBalance.toLocaleString()}
+            onChange={handleAcceleratorChange}
+            className="pl-7 bg-card border-border text-right font-medium"
+            placeholder="Accelerator"
+          />
+        </div>
+      )}
       {canRemove && (
         <Button
           variant="ghost"

@@ -15,8 +15,11 @@ import {
 
 export function useCalculator() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([
-    { id: '1', name: 'Portfolio 1', balance: 0 },
+    { id: '1', name: 'Portfolio 1', balance: 0, acceleratorBalance: 0 },
   ]);
+  
+  // Accelerator balance settings
+  const [chargeAcceleratorFees, setChargeAcceleratorFees] = useState<boolean | null>(null);
   
   // GST settings
   const [isGstExcluding, setIsGstExcluding] = useState(false);
@@ -49,7 +52,7 @@ export function useCalculator() {
 
   const addPortfolio = () => {
     const newId = (portfolios.length + 1).toString();
-    setPortfolios([...portfolios, { id: newId, name: `Portfolio ${newId}`, balance: 0 }]);
+    setPortfolios([...portfolios, { id: newId, name: `Portfolio ${newId}`, balance: 0, acceleratorBalance: 0 }]);
   };
 
   const removePortfolio = (id: string) => {
@@ -105,19 +108,28 @@ export function useCalculator() {
     return { fee: totalFee, breakdown };
   };
 
-  const feeBreakdown = useMemo((): FeeBreakdown => {
+  const portfolioTotals = useMemo(() => {
     const totalBalance = portfolios.reduce((sum, p) => sum + p.balance, 0);
-    const { fee: ongoingFeeAmount } = calculateTieredFee(totalBalance);
-    const ongoingFeePercent = totalBalance > 0 ? (ongoingFeeAmount / totalBalance) * 100 : 0;
+    const totalAccelerator = portfolios.reduce((sum, p) => sum + p.acceleratorBalance, 0);
+    // If chargeAcceleratorFees is true (yes, charge fees), use full balance
+    // If chargeAcceleratorFees is false (no, exclude), subtract accelerator
+    const feeableBalance = chargeAcceleratorFees === false ? totalBalance - totalAccelerator : totalBalance;
+    return { totalBalance, totalAccelerator, feeableBalance };
+  }, [portfolios, chargeAcceleratorFees]);
+
+  const feeBreakdown = useMemo((): FeeBreakdown => {
+    const { totalBalance, feeableBalance } = portfolioTotals;
+    const { fee: ongoingFeeAmount } = calculateTieredFee(feeableBalance);
+    const ongoingFeePercent = feeableBalance > 0 ? (ongoingFeeAmount / feeableBalance) * 100 : 0;
     
     return {
-      totalBalance,
+      totalBalance: feeableBalance,
       ongoingFeePercent,
       ongoingFeeAmount,
       shawAmount: ongoingFeeAmount * SHAW_SPLIT,
       bpfAmount: ongoingFeeAmount * BPF_SPLIT,
     };
-  }, [portfolios, feeTiers]);
+  }, [portfolioTotals, feeTiers]);
 
   const smsfFees = useMemo(() => {
     if (!isSMSF || !administrator) return null;
@@ -163,6 +175,9 @@ export function useCalculator() {
     addPortfolio,
     removePortfolio,
     updatePortfolio,
+    chargeAcceleratorFees,
+    setChargeAcceleratorFees,
+    portfolioTotals,
     isGstExcluding,
     setIsGstExcluding,
     numberOfTiers,
