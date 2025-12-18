@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
+
 import { Input } from '@/components/ui/input';
 
 interface FeeTierSettingsProps {
@@ -62,23 +62,25 @@ export function FeeTierSettings({
         </div>
       </div>
 
-      {/* Number of Tiers Slider */}
-      <div className="mb-6 pb-6 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
+      {/* Number of Tiers Switch */}
+      <div className="flex items-center justify-between mb-6 pb-6 border-b border-border">
+        <div>
           <Label className="text-foreground font-medium">Number of Tiers</Label>
-          <span className="text-lg font-semibold text-primary">{numberOfTiers}</span>
+          <p className="text-sm text-muted-foreground mt-1">
+            {numberOfTiers === 2 ? '2 tiers (up to $1M, above $1M)' : '3 tiers (up to $1M, $1M-$2M, above $2M)'}
+          </p>
         </div>
-        <Slider
-          value={[numberOfTiers]}
-          onValueChange={(value) => setNumberOfTiers(value[0])}
-          min={2}
-          max={3}
-          step={1}
-          className="w-full"
-        />
-        <div className="flex justify-between text-xs text-muted-foreground mt-2">
-          <span>2 Tiers</span>
-          <span>3 Tiers</span>
+        <div className="flex items-center gap-3">
+          <span className={`text-sm ${numberOfTiers === 2 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+            2 Tiers
+          </span>
+          <Switch
+            checked={numberOfTiers === 3}
+            onCheckedChange={(checked) => setNumberOfTiers(checked ? 3 : 2)}
+          />
+          <span className={`text-sm ${numberOfTiers === 3 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+            3 Tiers
+          </span>
         </div>
       </div>
 
