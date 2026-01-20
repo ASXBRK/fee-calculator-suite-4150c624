@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Calculator } from 'lucide-react';
+import { Plus, Calculator, Download } from 'lucide-react';
 import { useCalculator } from './useCalculator';
+import { useExcelExport } from './useExcelExport';
 import { PortfolioInput } from './PortfolioInput';
 import { ContributionInput } from './ContributionInput';
 import { FeeBreakdownCard } from './FeeBreakdownCard';
@@ -42,6 +43,28 @@ export function FeeCalculator() {
     documentServiceTotal,
     totalFees
   } = useCalculator();
+
+  const { exportToExcel } = useExcelExport();
+
+  const handleExport = () => {
+    exportToExcel({
+      portfolios,
+      contributions,
+      contributionTotals,
+      portfolioTotals,
+      chargeAcceleratorFees,
+      feeBreakdown,
+      smsfFees,
+      documentServices,
+      documentServiceTotal,
+      totalFees,
+      tierRates,
+      numberOfTiers,
+      isGstExcluding,
+      isSMSF,
+      administrator
+    });
+  };
 
   // Check if fee tiers have been configured
   const hasTierConfiguration = tierRates.some(r => r > 0);
@@ -243,7 +266,24 @@ export function FeeCalculator() {
           <div className="space-y-6">
             <div className="lg:sticky lg:top-8 space-y-6">
               <FeeBreakdownCard breakdown={feeBreakdown} />
-              {hasPortfolioBalance && <TotalFeesCard ongoingFee={feeBreakdown.ongoingFeeAmount} smsfFees={smsfFees?.total || 0} documentServices={documentServiceTotal} total={totalFees} />}
+              {hasPortfolioBalance && (
+                <>
+                  <TotalFeesCard 
+                    ongoingFee={feeBreakdown.ongoingFeeAmount} 
+                    smsfFees={smsfFees ? smsfFees.administrationFee + smsfFees.auditFee + smsfFees.asicAgentFee : 0} 
+                    documentServices={documentServiceTotal} 
+                    total={totalFees} 
+                  />
+                  <Button 
+                    onClick={handleExport}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export to Excel
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
