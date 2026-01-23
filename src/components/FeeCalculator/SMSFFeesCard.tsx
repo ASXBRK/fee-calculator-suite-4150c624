@@ -1,8 +1,15 @@
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Administrator, SMSFFees } from './types';
+
+const ESTIMATED_OTHER_FEES: SMSFFees = {
+  administrationFee: 2000,
+  auditFee: 500,
+  asicAgentFee: 210,
+};
 
 interface SMSFFeesCardProps {
   isSMSF: boolean | null;
@@ -17,6 +24,8 @@ interface SMSFFeesCardProps {
   } | null;
   customFees: SMSFFees;
   setCustomFees: (fees: SMSFFees) => void;
+  useEstimate: boolean;
+  setUseEstimate: (value: boolean) => void;
 }
 
 export function SMSFFeesCard({ 
@@ -26,7 +35,9 @@ export function SMSFFeesCard({
   setAdministrator, 
   fees,
   customFees,
-  setCustomFees 
+  setCustomFees,
+  useEstimate,
+  setUseEstimate
 }: SMSFFeesCardProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', {
@@ -36,6 +47,17 @@ export function SMSFFeesCard({
       maximumFractionDigits: 0,
     }).format(value);
   };
+
+  const handleEstimateToggle = (checked: boolean) => {
+    setUseEstimate(checked);
+    if (checked) {
+      setCustomFees(ESTIMATED_OTHER_FEES);
+    } else {
+      setCustomFees({ administrationFee: 0, auditFee: 0, asicAgentFee: 0 });
+    }
+  };
+
+  const displayFees = useEstimate ? ESTIMATED_OTHER_FEES : customFees;
 
   const handleCustomFeeChange = (field: keyof SMSFFees, value: string) => {
     const numValue = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
@@ -117,19 +139,32 @@ export function SMSFFeesCard({
         </div>
       )}
 
-      {/* Fee Breakdown for Other - Editable inputs */}
+      {/* Fee Breakdown for Other - Editable inputs with estimate option */}
       {isSMSF === true && administrator === 'other' && (
         <div className="space-y-4 animate-fade-in mt-6 pt-4 border-t border-border">
+          {/* Estimate checkbox */}
+          <div className="flex items-center space-x-2 pb-2">
+            <Checkbox
+              id="use-estimate"
+              checked={useEstimate}
+              onCheckedChange={handleEstimateToggle}
+            />
+            <Label htmlFor="use-estimate" className="cursor-pointer text-foreground font-medium">
+              Use estimate
+            </Label>
+          </div>
+
           <div className="flex justify-between items-center gap-4">
             <Label className="text-muted-foreground whitespace-nowrap">Administration Fee</Label>
             <div className="relative w-40">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
               <Input
                 type="text"
-                value={customFees.administrationFee || ''}
+                value={displayFees.administrationFee || ''}
                 onChange={(e) => handleCustomFeeChange('administrationFee', e.target.value)}
                 className="pl-7 text-right"
                 placeholder="0"
+                disabled={useEstimate}
               />
             </div>
           </div>
@@ -139,10 +174,11 @@ export function SMSFFeesCard({
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
               <Input
                 type="text"
-                value={customFees.auditFee || ''}
+                value={displayFees.auditFee || ''}
                 onChange={(e) => handleCustomFeeChange('auditFee', e.target.value)}
                 className="pl-7 text-right"
                 placeholder="0"
+                disabled={useEstimate}
               />
             </div>
           </div>
@@ -152,17 +188,18 @@ export function SMSFFeesCard({
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
               <Input
                 type="text"
-                value={customFees.asicAgentFee || ''}
+                value={displayFees.asicAgentFee || ''}
                 onChange={(e) => handleCustomFeeChange('asicAgentFee', e.target.value)}
                 className="pl-7 text-right"
                 placeholder="0"
+                disabled={useEstimate}
               />
             </div>
           </div>
           <div className="flex justify-between items-center pt-4 border-t border-border">
             <span className="font-medium text-foreground">Total SMSF Fees</span>
             <span className="text-lg font-semibold text-primary">
-              {formatCurrency(customFees.administrationFee + customFees.auditFee + customFees.asicAgentFee)} p.a.
+              {formatCurrency(displayFees.administrationFee + displayFees.auditFee + displayFees.asicAgentFee)} p.a.
             </span>
           </div>
         </div>
