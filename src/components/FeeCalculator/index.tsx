@@ -7,6 +7,7 @@ import { PortfolioInput } from './PortfolioInput';
 import { ContributionInput } from './ContributionInput';
 import { FeeBreakdownCard } from './FeeBreakdownCard';
 import { SMSFFeesCard } from './SMSFFeesCard';
+import { PASMPSCard } from './PASMPSCard';
 import { DocumentServicesCard } from './DocumentServicesCard';
 import { TotalFeesCard } from './TotalFeesCard';
 import { FeeTierSettings } from './FeeTierSettings';
@@ -39,6 +40,19 @@ export function FeeCalculator() {
     setCustomFees,
     useEstimate,
     setUseEstimate,
+    hasPAS,
+    setHasPAS,
+    hasMPS,
+    setHasMPS,
+    pasItems,
+    mpsItems,
+    addPASItem,
+    removePASItem,
+    updatePASItem,
+    addMPSItem,
+    removeMPSItem,
+    updateMPSItem,
+    pasMpsTotal,
     documentServices,
     toggleDocumentService,
     updateServiceQuantity,
@@ -260,7 +274,26 @@ export function FeeCalculator() {
               <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} customFees={customFees} setCustomFees={setCustomFees} useEstimate={useEstimate} setUseEstimate={setUseEstimate} />
             )}
 
-            {/* Step 5: Document Services - Only show if Heffron is selected */}
+            {/* Step 6: PAS/MPS - Show after SMSF answered */}
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (
+              <PASMPSCard
+                hasPAS={hasPAS}
+                setHasPAS={setHasPAS}
+                hasMPS={hasMPS}
+                setHasMPS={setHasMPS}
+                pasItems={pasItems}
+                mpsItems={mpsItems}
+                addPASItem={addPASItem}
+                removePASItem={removePASItem}
+                updatePASItem={updatePASItem}
+                addMPSItem={addMPSItem}
+                removeMPSItem={removeMPSItem}
+                updateMPSItem={updateMPSItem}
+                pasMpsTotal={pasMpsTotal}
+              />
+            )}
+
+            {/* Step 7: Document Services - Only show if Heffron is selected */}
             {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && administrator === 'heffron' && (
               <DocumentServicesCard services={documentServices} onToggle={toggleDocumentService} onQuantityChange={updateServiceQuantity} total={documentServiceTotal} />
             )}

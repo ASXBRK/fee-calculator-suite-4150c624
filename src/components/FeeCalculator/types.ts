@@ -42,6 +42,26 @@ export interface FeeTier {
   rate: number;
 }
 
+export interface PASMPSItem {
+  id: string;
+  isNew: boolean | null;
+}
+
+export interface PASMPSFees {
+  pasNew: number;
+  pasExisting: number;
+  mpsNew: number;
+  mpsExisting: number;
+}
+
+// Placeholder fees - update with actual amounts
+export const DEFAULT_PASMPS_FEES: PASMPSFees = {
+  pasNew: 0,
+  pasExisting: 0,
+  mpsNew: 0,
+  mpsExisting: 0,
+};
+
 export type Administrator = 'heffron' | 'ryans' | 'other' | null;
 
 export const SHAW_SPLIT = 0.4;
@@ -57,12 +77,6 @@ export const RYANS_SMSF_FEES: SMSFFees = {
   administrationFee: 1800,
   auditFee: 550,
   asicAgentFee: 200,
-};
-
-export const OTHER_SMSF_FEES: SMSFFees = {
-  administrationFee: 0,
-  auditFee: 0,
-  asicAgentFee: 0,
 };
 
 export const DOCUMENT_SERVICES: DocumentService[] = [
