@@ -42,6 +42,7 @@ export function useCalculator() {
     auditFee: 0,
     asicAgentFee: 0,
   });
+  const [useEstimate, setUseEstimate] = useState<boolean>(false);
   
   const [documentServices, setDocumentServices] = useState<DocumentService[]>(DOCUMENT_SERVICES);
 
@@ -251,6 +252,8 @@ export function useCalculator() {
     setAdministrator,
     customFees,
     setCustomFees,
+    useEstimate,
+    setUseEstimate,
     documentServices,
     toggleDocumentService,
     updateServiceQuantity,
