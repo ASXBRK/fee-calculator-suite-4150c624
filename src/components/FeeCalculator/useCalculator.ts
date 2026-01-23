@@ -6,11 +6,11 @@ import {
   FeeBreakdown, 
   FeeTier,
   Administrator,
+  SMSFFees,
   SHAW_SPLIT, 
   BPF_SPLIT, 
   HEFFRON_SMSF_FEES,
   RYANS_SMSF_FEES,
-  OTHER_SMSF_FEES,
   DOCUMENT_SERVICES 
 } from './types';
 
@@ -37,6 +37,11 @@ export function useCalculator() {
   // SMSF settings
   const [isSMSF, setIsSMSF] = useState<boolean | null>(null);
   const [administrator, setAdministrator] = useState<Administrator>(null);
+  const [customFees, setCustomFees] = useState<SMSFFees>({
+    administrationFee: 0,
+    auditFee: 0,
+    asicAgentFee: 0,
+  });
   
   const [documentServices, setDocumentServices] = useState<DocumentService[]>(DOCUMENT_SERVICES);
 
@@ -184,7 +189,7 @@ export function useCalculator() {
   const smsfFees = useMemo(() => {
     if (!isSMSF || !administrator) return null;
     
-    let fees;
+    let fees: SMSFFees;
     switch (administrator) {
       case 'heffron':
         fees = HEFFRON_SMSF_FEES;
@@ -193,7 +198,7 @@ export function useCalculator() {
         fees = RYANS_SMSF_FEES;
         break;
       case 'other':
-        fees = OTHER_SMSF_FEES;
+        fees = customFees;
         break;
       default:
         return null;
@@ -203,7 +208,7 @@ export function useCalculator() {
       ...fees,
       total: fees.administrationFee + fees.auditFee + fees.asicAgentFee,
     };
-  }, [isSMSF, administrator]);
+  }, [isSMSF, administrator, customFees]);
 
   const documentServiceTotal = useMemo(() => {
     // Only show document services for Heffron
@@ -244,6 +249,8 @@ export function useCalculator() {
     setIsSMSF,
     administrator,
     setAdministrator,
+    customFees,
+    setCustomFees,
     documentServices,
     toggleDocumentService,
     updateServiceQuantity,

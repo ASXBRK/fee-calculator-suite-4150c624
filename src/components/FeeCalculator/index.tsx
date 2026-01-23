@@ -35,6 +35,8 @@ export function FeeCalculator() {
     setIsSMSF,
     administrator,
     setAdministrator,
+    customFees,
+    setCustomFees,
     documentServices,
     toggleDocumentService,
     updateServiceQuantity,
@@ -253,7 +255,7 @@ export function FeeCalculator() {
 
             {/* Step 5: SMSF - Show after portfolio balance entered */}
             {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && (
-              <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} />
+              <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} customFees={customFees} setCustomFees={setCustomFees} />
             )}
 
             {/* Step 5: Document Services - Only show if Heffron is selected */}

@@ -1,7 +1,8 @@
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Administrator } from './types';
+import { Administrator, SMSFFees } from './types';
 
 interface SMSFFeesCardProps {
   isSMSF: boolean | null;
@@ -14,9 +15,19 @@ interface SMSFFeesCardProps {
     asicAgentFee: number;
     total: number;
   } | null;
+  customFees: SMSFFees;
+  setCustomFees: (fees: SMSFFees) => void;
 }
 
-export function SMSFFeesCard({ isSMSF, setIsSMSF, administrator, setAdministrator, fees }: SMSFFeesCardProps) {
+export function SMSFFeesCard({ 
+  isSMSF, 
+  setIsSMSF, 
+  administrator, 
+  setAdministrator, 
+  fees,
+  customFees,
+  setCustomFees 
+}: SMSFFeesCardProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
@@ -24,6 +35,11 @@ export function SMSFFeesCard({ isSMSF, setIsSMSF, administrator, setAdministrato
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const handleCustomFeeChange = (field: keyof SMSFFees, value: string) => {
+    const numValue = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+    setCustomFees({ ...customFees, [field]: numValue });
   };
 
   return (
@@ -79,8 +95,8 @@ export function SMSFFeesCard({ isSMSF, setIsSMSF, administrator, setAdministrato
         </div>
       )}
 
-      {/* Fee Breakdown - Only show if administrator is selected */}
-      {isSMSF === true && administrator && fees && fees.total > 0 && (
+      {/* Fee Breakdown for Heffron/Ryans - Display only */}
+      {isSMSF === true && administrator && administrator !== 'other' && fees && fees.total > 0 && (
         <div className="space-y-3 animate-fade-in mt-6 pt-4 border-t border-border">
           <div className="flex justify-between items-center py-2">
             <span className="text-muted-foreground">Administration Fee</span>
@@ -101,10 +117,55 @@ export function SMSFFeesCard({ isSMSF, setIsSMSF, administrator, setAdministrato
         </div>
       )}
 
+      {/* Fee Breakdown for Other - Editable inputs */}
       {isSMSF === true && administrator === 'other' && (
-        <p className="text-sm text-muted-foreground mt-4 animate-fade-in">
-          Please enter your administrator fees manually or contact us for assistance.
-        </p>
+        <div className="space-y-4 animate-fade-in mt-6 pt-4 border-t border-border">
+          <div className="flex justify-between items-center gap-4">
+            <Label className="text-muted-foreground whitespace-nowrap">Administration Fee</Label>
+            <div className="relative w-40">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+              <Input
+                type="text"
+                value={customFees.administrationFee || ''}
+                onChange={(e) => handleCustomFeeChange('administrationFee', e.target.value)}
+                className="pl-7 text-right"
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div className="flex justify-between items-center gap-4">
+            <Label className="text-muted-foreground whitespace-nowrap">Audit Fee</Label>
+            <div className="relative w-40">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+              <Input
+                type="text"
+                value={customFees.auditFee || ''}
+                onChange={(e) => handleCustomFeeChange('auditFee', e.target.value)}
+                className="pl-7 text-right"
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div className="flex justify-between items-center gap-4">
+            <Label className="text-muted-foreground whitespace-nowrap">ASIC Agent - Special Purpose</Label>
+            <div className="relative w-40">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+              <Input
+                type="text"
+                value={customFees.asicAgentFee || ''}
+                onChange={(e) => handleCustomFeeChange('asicAgentFee', e.target.value)}
+                className="pl-7 text-right"
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div className="flex justify-between items-center pt-4 border-t border-border">
+            <span className="font-medium text-foreground">Total SMSF Fees</span>
+            <span className="text-lg font-semibold text-primary">
+              {formatCurrency(customFees.administrationFee + customFees.auditFee + customFees.asicAgentFee)} p.a.
+            </span>
+          </div>
+        </div>
       )}
     </Card>
   );
