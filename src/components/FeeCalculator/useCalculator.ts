@@ -7,6 +7,8 @@ import {
   FeeTier,
   Administrator,
   SMSFFees,
+  PASMPSItem,
+  DEFAULT_PASMPS_FEES,
   SHAW_SPLIT, 
   BPF_SPLIT, 
   HEFFRON_SMSF_FEES,
@@ -43,6 +45,16 @@ export function useCalculator() {
     asicAgentFee: 0,
   });
   const [useEstimate, setUseEstimate] = useState<boolean>(false);
+
+  // PAS/MPS settings
+  const [hasPAS, setHasPAS] = useState<boolean>(false);
+  const [hasMPS, setHasMPS] = useState<boolean>(false);
+  const [pasItems, setPasItems] = useState<PASMPSItem[]>([
+    { id: '1', isNew: null }
+  ]);
+  const [mpsItems, setMpsItems] = useState<PASMPSItem[]>([
+    { id: '1', isNew: null }
+  ]);
   
   const [documentServices, setDocumentServices] = useState<DocumentService[]>(DOCUMENT_SERVICES);
 
@@ -124,6 +136,37 @@ export function useCalculator() {
 
     return { totalContributions, feeableContributions };
   }, [contributions]);
+
+  // PAS/MPS functions
+  const addPASItem = () => {
+    const newId = (pasItems.length + 1).toString();
+    setPasItems([...pasItems, { id: newId, isNew: null }]);
+  };
+
+  const removePASItem = (id: string) => {
+    if (pasItems.length > 1) {
+      setPasItems(pasItems.filter(item => item.id !== id));
+    }
+  };
+
+  const updatePASItem = (id: string, isNew: boolean) => {
+    setPasItems(pasItems.map(item => item.id === id ? { ...item, isNew } : item));
+  };
+
+  const addMPSItem = () => {
+    const newId = (mpsItems.length + 1).toString();
+    setMpsItems([...mpsItems, { id: newId, isNew: null }]);
+  };
+
+  const removeMPSItem = (id: string) => {
+    if (mpsItems.length > 1) {
+      setMpsItems(mpsItems.filter(item => item.id !== id));
+    }
+  };
+
+  const updateMPSItem = (id: string, isNew: boolean) => {
+    setMpsItems(mpsItems.map(item => item.id === id ? { ...item, isNew } : item));
+  };
 
   const toggleDocumentService = (id: string) => {
     setDocumentServices(documentServices.map(s => 
@@ -220,11 +263,38 @@ export function useCalculator() {
       .reduce((sum, s) => sum + (s.fee * s.quantity), 0);
   }, [documentServices, administrator]);
 
+  const pasMpsTotal = useMemo(() => {
+    let total = 0;
+    
+    if (hasPAS) {
+      pasItems.forEach(item => {
+        if (item.isNew === true) {
+          total += DEFAULT_PASMPS_FEES.pasNew;
+        } else if (item.isNew === false) {
+          total += DEFAULT_PASMPS_FEES.pasExisting;
+        }
+      });
+    }
+    
+    if (hasMPS) {
+      mpsItems.forEach(item => {
+        if (item.isNew === true) {
+          total += DEFAULT_PASMPS_FEES.mpsNew;
+        } else if (item.isNew === false) {
+          total += DEFAULT_PASMPS_FEES.mpsExisting;
+        }
+      });
+    }
+    
+    return total;
+  }, [hasPAS, hasMPS, pasItems, mpsItems]);
+
   const totalFees = useMemo(() => {
     return feeBreakdown.ongoingFeeAmount + 
            (smsfFees?.total || 0) + 
-           documentServiceTotal;
-  }, [feeBreakdown, smsfFees, documentServiceTotal]);
+           documentServiceTotal +
+           pasMpsTotal;
+  }, [feeBreakdown, smsfFees, documentServiceTotal, pasMpsTotal]);
 
   return {
     portfolios,
@@ -254,6 +324,19 @@ export function useCalculator() {
     setCustomFees,
     useEstimate,
     setUseEstimate,
+    hasPAS,
+    setHasPAS,
+    hasMPS,
+    setHasMPS,
+    pasItems,
+    mpsItems,
+    addPASItem,
+    removePASItem,
+    updatePASItem,
+    addMPSItem,
+    removeMPSItem,
+    updateMPSItem,
+    pasMpsTotal,
     documentServices,
     toggleDocumentService,
     updateServiceQuantity,
