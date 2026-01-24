@@ -158,12 +158,18 @@ export function PASMPSCard({
                     </div>
                   </div>
                   {itemFee && (
-                    <div className="mt-2 pt-2 border-t border-border/50 text-sm text-muted-foreground">
-                      <span>{formatCurrency(itemFee.total)} p.a.</span>
-                      <span className="mx-2">|</span>
-                      <span>Shaw: {formatCurrency(itemFee.shaw)}</span>
-                      <span className="mx-2">|</span>
-                      <span>BPF: {formatCurrency(itemFee.bpf)}</span>
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <p className="text-sm font-medium text-foreground mb-2">{formatCurrency(itemFee.total)} p.a.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="p-2 rounded-lg bg-primary/5 border border-primary/20">
+                          <p className="text-xs text-muted-foreground mb-0.5">Shaw and Partners (40%)</p>
+                          <p className="text-sm font-semibold text-primary">{formatCurrency(itemFee.shaw)}</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-accent/10 border border-accent/30">
+                          <p className="text-xs text-muted-foreground mb-0.5">BPF Wealth Group (60%)</p>
+                          <p className="text-sm font-semibold text-accent-foreground">{formatCurrency(itemFee.bpf)}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -225,12 +231,18 @@ export function PASMPSCard({
                     </div>
                   </div>
                   {itemFee && (
-                    <div className="mt-2 pt-2 border-t border-border/50 text-sm text-muted-foreground">
-                      <span>{formatCurrency(itemFee.total)} p.a.</span>
-                      <span className="mx-2">|</span>
-                      <span>Shaw: {formatCurrency(itemFee.shaw)}</span>
-                      <span className="mx-2">|</span>
-                      <span>BPF: {formatCurrency(itemFee.bpf)}</span>
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <p className="text-sm font-medium text-foreground mb-2">{formatCurrency(itemFee.total)} p.a.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="p-2 rounded-lg bg-primary/5 border border-primary/20">
+                          <p className="text-xs text-muted-foreground mb-0.5">Shaw and Partners (40%)</p>
+                          <p className="text-sm font-semibold text-primary">{formatCurrency(itemFee.shaw)}</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-accent/10 border border-accent/30">
+                          <p className="text-xs text-muted-foreground mb-0.5">BPF Wealth Group (60%)</p>
+                          <p className="text-sm font-semibold text-accent-foreground">{formatCurrency(itemFee.bpf)}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
