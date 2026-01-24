@@ -9,6 +9,7 @@ import {
   SMSFFees,
   PASMPSItem,
   DEFAULT_PASMPS_FEES,
+  MINIMUM_ADVICE_FEES,
   SHAW_SPLIT, 
   BPF_SPLIT, 
   HEFFRON_SMSF_FEES,
@@ -216,9 +217,46 @@ export function useCalculator() {
     return { totalBalance, totalAccelerator, feeableBalance, portfolioFeeableBalance };
   }, [portfolios, chargeAcceleratorFees, contributionTotals]);
 
+  // Calculate applicable minimum fee based on PAS/MPS selections
+  const applicableMinimum = useMemo(() => {
+    // If no PAS/MPS selected, no minimum applies
+    if (!hasPAS && !hasMPS) return 0;
+
+    let hasNewPAS = false;
+    let hasNewMPS = false;
+    let hasAnyExisting = false;
+
+    if (hasPAS) {
+      pasItems.forEach(item => {
+        if (item.isNew === true) hasNewPAS = true;
+        if (item.isNew === false) hasAnyExisting = true;
+      });
+    }
+
+    if (hasMPS) {
+      mpsItems.forEach(item => {
+        if (item.isNew === true) hasNewMPS = true;
+        if (item.isNew === false) hasAnyExisting = true;
+      });
+    }
+
+    // New MPS has highest minimum
+    if (hasNewMPS) return MINIMUM_ADVICE_FEES.mpsNew;
+    // New PAS has second highest minimum
+    if (hasNewPAS) return MINIMUM_ADVICE_FEES.pasNew;
+    // Existing only
+    if (hasAnyExisting) return MINIMUM_ADVICE_FEES.existing;
+
+    return 0;
+  }, [hasPAS, hasMPS, pasItems, mpsItems]);
+
   const feeBreakdown = useMemo((): FeeBreakdown => {
-    const { totalBalance, feeableBalance } = portfolioTotals;
-    const { fee: ongoingFeeAmount } = calculateTieredFee(feeableBalance);
+    const { feeableBalance } = portfolioTotals;
+    const { fee: calculatedFee } = calculateTieredFee(feeableBalance);
+    
+    // Check if minimum fee applies
+    const minimumApplied = applicableMinimum > 0 && calculatedFee < applicableMinimum;
+    const ongoingFeeAmount = minimumApplied ? applicableMinimum : calculatedFee;
     const ongoingFeePercent = feeableBalance > 0 ? (ongoingFeeAmount / feeableBalance) * 100 : 0;
     
     return {
@@ -227,8 +265,10 @@ export function useCalculator() {
       ongoingFeeAmount,
       shawAmount: ongoingFeeAmount * SHAW_SPLIT,
       bpfAmount: ongoingFeeAmount * BPF_SPLIT,
+      minimumApplied,
+      minimumAmount: applicableMinimum,
     };
-  }, [portfolioTotals, feeTiers]);
+  }, [portfolioTotals, applicableMinimum, calculateTieredFee]);
 
   const smsfFees = useMemo(() => {
     if (!isSMSF || !administrator) return null;
@@ -337,6 +377,7 @@ export function useCalculator() {
     removeMPSItem,
     updateMPSItem,
     pasMpsTotal,
+    applicableMinimum,
     documentServices,
     toggleDocumentService,
     updateServiceQuantity,
