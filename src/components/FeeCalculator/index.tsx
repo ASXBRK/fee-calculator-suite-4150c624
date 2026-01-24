@@ -290,6 +290,9 @@ export function FeeCalculator() {
                 removeMPSItem={removeMPSItem}
                 updateMPSItem={updateMPSItem}
                 pasMpsTotal={pasMpsTotal}
+                ongoingFeeAmount={feeBreakdown.ongoingFeeAmount}
+                minimumApplied={feeBreakdown.minimumApplied}
+                minimumAmount={feeBreakdown.minimumAmount}
               />
             )}
 

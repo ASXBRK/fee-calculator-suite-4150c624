@@ -34,6 +34,8 @@ export interface FeeBreakdown {
   ongoingFeeAmount: number;
   shawAmount: number;
   bpfAmount: number;
+  minimumApplied: boolean;
+  minimumAmount: number;
 }
 
 export interface FeeTier {
@@ -54,12 +56,25 @@ export interface PASMPSFees {
   mpsExisting: number;
 }
 
-// Placeholder fees - update with actual amounts
+// PAS/MPS fees per account
 export const DEFAULT_PASMPS_FEES: PASMPSFees = {
-  pasNew: 0,
-  pasExisting: 0,
-  mpsNew: 0,
-  mpsExisting: 0,
+  pasNew: 792,        // $792 total ($317 Shaw, $475 BPF)
+  pasExisting: 607.2, // $607.20 total ($243 Shaw, $364 BPF)
+  mpsNew: 792,        // Same as PAS
+  mpsExisting: 607.2, // Same as PAS
+};
+
+// Minimum advice fees when PAS/MPS is active
+export interface MinimumFees {
+  existing: number;
+  pasNew: number;
+  mpsNew: number;
+}
+
+export const MINIMUM_ADVICE_FEES: MinimumFees = {
+  existing: 3600,    // $3,600 for existing PAS or MPS
+  pasNew: 4675,      // $4,675 for new PAS
+  mpsNew: 5472.5,    // $5,472.50 for new MPS
 };
 
 export type Administrator = 'heffron' | 'ryans' | 'other' | null;

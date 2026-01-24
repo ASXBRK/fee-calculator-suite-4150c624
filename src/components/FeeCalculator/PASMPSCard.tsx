@@ -3,8 +3,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Plus, Trash2 } from 'lucide-react';
-import { PASMPSItem } from './types';
+import { Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { PASMPSItem, DEFAULT_PASMPS_FEES, SHAW_SPLIT, BPF_SPLIT } from './types';
 
 interface PASMPSCardProps {
   hasPAS: boolean;
@@ -20,6 +20,9 @@ interface PASMPSCardProps {
   removeMPSItem: (id: string) => void;
   updateMPSItem: (id: string, isNew: boolean) => void;
   pasMpsTotal: number;
+  ongoingFeeAmount: number;
+  minimumApplied: boolean;
+  minimumAmount: number;
 }
 
 export function PASMPSCard({
@@ -35,7 +38,10 @@ export function PASMPSCard({
   addMPSItem,
   removeMPSItem,
   updateMPSItem,
-  pasMpsTotal
+  pasMpsTotal,
+  ongoingFeeAmount,
+  minimumApplied,
+  minimumAmount
 }: PASMPSCardProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', {
@@ -44,6 +50,19 @@ export function PASMPSCard({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Calculate fee breakdown per item
+  const getItemFee = (type: 'pas' | 'mps', isNew: boolean | null) => {
+    if (isNew === null) return null;
+    const fee = type === 'pas' 
+      ? (isNew ? DEFAULT_PASMPS_FEES.pasNew : DEFAULT_PASMPS_FEES.pasExisting)
+      : (isNew ? DEFAULT_PASMPS_FEES.mpsNew : DEFAULT_PASMPS_FEES.mpsExisting);
+    return {
+      total: fee,
+      shaw: fee * SHAW_SPLIT,
+      bpf: fee * BPF_SPLIT
+    };
   };
 
   return (
@@ -73,6 +92,20 @@ export function PASMPSCard({
         </div>
       </div>
 
+      {/* Minimum Fee Warning */}
+      {minimumApplied && (hasPAS || hasMPS) && (
+        <div className="animate-fade-in mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-amber-700 dark:text-amber-400">Below Minimum FUM</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              The calculated ongoing advice fee is below the minimum of {formatCurrency(minimumAmount)}. 
+              The minimum fee will be applied.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* PAS Items */}
       {hasPAS && (
         <div className="animate-fade-in pt-4 border-t border-border mb-6">
@@ -90,38 +123,52 @@ export function PASMPSCard({
             </Button>
           </div>
           <div className="space-y-3">
-            {pasItems.map((item, index) => (
-              <div key={item.id} className="flex items-center justify-between gap-4 p-3 bg-muted/30 rounded-lg">
-                <span className="text-foreground font-medium">PAS {index + 1}</span>
-                <div className="flex items-center gap-4">
-                  <RadioGroup
-                    value={item.isNew === null ? '' : item.isNew ? 'new' : 'existing'}
-                    onValueChange={(value) => updatePASItem(item.id, value === 'new')}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="new" id={`pas-${item.id}-new`} />
-                      <Label htmlFor={`pas-${item.id}-new`} className="cursor-pointer text-sm">New</Label>
+            {pasItems.map((item, index) => {
+              const itemFee = getItemFee('pas', item.isNew);
+              return (
+                <div key={item.id} className="p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-foreground font-medium">PAS {index + 1}</span>
+                    <div className="flex items-center gap-4">
+                      <RadioGroup
+                        value={item.isNew === null ? '' : item.isNew ? 'new' : 'existing'}
+                        onValueChange={(value) => updatePASItem(item.id, value === 'new')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="new" id={`pas-${item.id}-new`} />
+                          <Label htmlFor={`pas-${item.id}-new`} className="cursor-pointer text-sm">New</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="existing" id={`pas-${item.id}-existing`} />
+                          <Label htmlFor={`pas-${item.id}-existing`} className="cursor-pointer text-sm">Existing</Label>
+                        </div>
+                      </RadioGroup>
+                      {pasItems.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePASItem(item.id)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="existing" id={`pas-${item.id}-existing`} />
-                      <Label htmlFor={`pas-${item.id}-existing`} className="cursor-pointer text-sm">Existing</Label>
+                  </div>
+                  {itemFee && (
+                    <div className="mt-2 pt-2 border-t border-border/50 text-sm text-muted-foreground">
+                      <span>{formatCurrency(itemFee.total)} p.a.</span>
+                      <span className="mx-2">|</span>
+                      <span>Shaw: {formatCurrency(itemFee.shaw)}</span>
+                      <span className="mx-2">|</span>
+                      <span>BPF: {formatCurrency(itemFee.bpf)}</span>
                     </div>
-                  </RadioGroup>
-                  {pasItems.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removePASItem(item.id)}
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -143,38 +190,52 @@ export function PASMPSCard({
             </Button>
           </div>
           <div className="space-y-3">
-            {mpsItems.map((item, index) => (
-              <div key={item.id} className="flex items-center justify-between gap-4 p-3 bg-muted/30 rounded-lg">
-                <span className="text-foreground font-medium">MPS {index + 1}</span>
-                <div className="flex items-center gap-4">
-                  <RadioGroup
-                    value={item.isNew === null ? '' : item.isNew ? 'new' : 'existing'}
-                    onValueChange={(value) => updateMPSItem(item.id, value === 'new')}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="new" id={`mps-${item.id}-new`} />
-                      <Label htmlFor={`mps-${item.id}-new`} className="cursor-pointer text-sm">New</Label>
+            {mpsItems.map((item, index) => {
+              const itemFee = getItemFee('mps', item.isNew);
+              return (
+                <div key={item.id} className="p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-foreground font-medium">MPS {index + 1}</span>
+                    <div className="flex items-center gap-4">
+                      <RadioGroup
+                        value={item.isNew === null ? '' : item.isNew ? 'new' : 'existing'}
+                        onValueChange={(value) => updateMPSItem(item.id, value === 'new')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="new" id={`mps-${item.id}-new`} />
+                          <Label htmlFor={`mps-${item.id}-new`} className="cursor-pointer text-sm">New</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="existing" id={`mps-${item.id}-existing`} />
+                          <Label htmlFor={`mps-${item.id}-existing`} className="cursor-pointer text-sm">Existing</Label>
+                        </div>
+                      </RadioGroup>
+                      {mpsItems.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeMPSItem(item.id)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="existing" id={`mps-${item.id}-existing`} />
-                      <Label htmlFor={`mps-${item.id}-existing`} className="cursor-pointer text-sm">Existing</Label>
+                  </div>
+                  {itemFee && (
+                    <div className="mt-2 pt-2 border-t border-border/50 text-sm text-muted-foreground">
+                      <span>{formatCurrency(itemFee.total)} p.a.</span>
+                      <span className="mx-2">|</span>
+                      <span>Shaw: {formatCurrency(itemFee.shaw)}</span>
+                      <span className="mx-2">|</span>
+                      <span>BPF: {formatCurrency(itemFee.bpf)}</span>
                     </div>
-                  </RadioGroup>
-                  {mpsItems.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeMPSItem(item.id)}
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

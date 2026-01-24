@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { FeeBreakdown as FeeBreakdownType } from './types';
+import { AlertTriangle } from 'lucide-react';
 
 interface FeeBreakdownCardProps {
   breakdown: FeeBreakdownType;
@@ -41,11 +42,27 @@ export function FeeBreakdownCard({ breakdown }: FeeBreakdownCardProps) {
         </div>
 
         <div className="flex justify-between items-center pb-4 border-b border-border">
-          <span className="text-muted-foreground">Ongoing Fee Amount</span>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Ongoing Fee Amount</span>
+            {breakdown.minimumApplied && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                <AlertTriangle className="h-3 w-3" />
+                Minimum Applied
+              </span>
+            )}
+          </div>
           <span className="text-lg font-medium text-foreground">
             {formatCurrency(breakdown.ongoingFeeAmount)} p.a.
           </span>
         </div>
+
+        {breakdown.minimumApplied && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg animate-fade-in">
+            <p className="text-sm text-muted-foreground">
+              Minimum fee of {formatCurrency(breakdown.minimumAmount)} applied due to PAS/MPS selection.
+            </p>
+          </div>
+        )}
 
         <div className="pt-2">
           <p className="text-sm text-muted-foreground mb-3">Fee Split</p>
