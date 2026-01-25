@@ -8,13 +8,16 @@ import {
   Administrator,
   SMSFFees,
   PASMPSItem,
+  SMAStatus,
   DEFAULT_PASMPS_FEES,
   MINIMUM_ADVICE_FEES,
   SHAW_SPLIT, 
   BPF_SPLIT, 
   HEFFRON_SMSF_FEES,
   RYANS_SMSF_FEES,
-  DOCUMENT_SERVICES 
+  DOCUMENT_SERVICES,
+  SMA_FEE_TIERS,
+  SMA_EXISTING_FEES,
 } from './types';
 
 export function useCalculator() {
@@ -58,6 +61,12 @@ export function useCalculator() {
   ]);
   
   const [documentServices, setDocumentServices] = useState<DocumentService[]>(DOCUMENT_SERVICES);
+
+  // SMA settings
+  const [smaStatus, setSmaStatus] = useState<SMAStatus>(null);
+  const [smaAccountCount, setSmaAccountCount] = useState<number>(1);
+  const [smaInvestedAmount, setSmaInvestedAmount] = useState<number>(0);
+  const [smaUseAutoEstimate, setSmaUseAutoEstimate] = useState<boolean>(false);
 
   // Calculate actual fee tiers based on settings
   const feeTiers = useMemo((): FeeTier[] => {
@@ -329,12 +338,75 @@ export function useCalculator() {
     return total;
   }, [hasPAS, hasMPS, pasItems, mpsItems]);
 
+  // Calculate SMA fees
+  const smaFees = useMemo(() => {
+    if (!smaStatus || smaStatus === 'na') return null;
+    
+    if (smaStatus === 'existing') {
+      const total = (SMA_EXISTING_FEES.managedFundCustody + 
+                    SMA_EXISTING_FEES.accountKeepingFee + 
+                    SMA_EXISTING_FEES.expenseRecoveryFee) * smaAccountCount;
+      return {
+        administrationFee: 0,
+        administrationPercent: 0,
+        accountKeepingFee: SMA_EXISTING_FEES.accountKeepingFee * smaAccountCount,
+        expenseRecoveryFee: SMA_EXISTING_FEES.expenseRecoveryFee * smaAccountCount,
+        managedFundCustody: SMA_EXISTING_FEES.managedFundCustody * smaAccountCount,
+        total,
+        accountCount: smaAccountCount,
+      };
+    }
+    
+    // New SMA - calculate tiered administration fee
+    const investedAmount = smaUseAutoEstimate 
+      ? Math.round(portfolioTotals.totalBalance * 0.2) 
+      : smaInvestedAmount;
+    
+    if (investedAmount <= 0) return null;
+    
+    // Calculate tiered administration fee
+    let remainingAmount = investedAmount;
+    let adminFee = 0;
+    
+    for (const tier of SMA_FEE_TIERS) {
+      if (remainingAmount <= 0) break;
+      
+      const tierStart = tier.min;
+      const tierEnd = tier.max;
+      const tierSize = tier.min === 0 ? tierEnd : tierEnd - tierStart + 1;
+      const amountInTier = Math.min(remainingAmount, tier.min === 0 ? tierEnd : tierSize);
+      
+      adminFee += amountInTier * tier.rate;
+      remainingAmount -= amountInTier;
+    }
+    
+    const adminPercent = investedAmount > 0 ? (adminFee / investedAmount) * 100 : 0;
+    const accountKeepingFee = 60 * smaAccountCount;
+    const expenseRecoveryFee = 150 * smaAccountCount;
+    const total = adminFee + accountKeepingFee + expenseRecoveryFee;
+    
+    return {
+      administrationFee: adminFee,
+      administrationPercent: adminPercent,
+      accountKeepingFee,
+      expenseRecoveryFee,
+      managedFundCustody: 0,
+      total,
+      accountCount: smaAccountCount,
+    };
+  }, [smaStatus, smaAccountCount, smaInvestedAmount, smaUseAutoEstimate, portfolioTotals.totalBalance]);
+
+  const smaTotal = useMemo(() => {
+    return smaFees?.total || 0;
+  }, [smaFees]);
+
   const totalFees = useMemo(() => {
     return feeBreakdown.ongoingFeeAmount + 
            (smsfFees?.total || 0) + 
            documentServiceTotal +
-           pasMpsTotal;
-  }, [feeBreakdown, smsfFees, documentServiceTotal, pasMpsTotal]);
+           pasMpsTotal +
+           smaTotal;
+  }, [feeBreakdown, smsfFees, documentServiceTotal, pasMpsTotal, smaTotal]);
 
   return {
     portfolios,
@@ -384,6 +456,16 @@ export function useCalculator() {
     feeBreakdown,
     smsfFees,
     documentServiceTotal,
+    smaStatus,
+    setSmaStatus,
+    smaAccountCount,
+    setSmaAccountCount,
+    smaInvestedAmount,
+    setSmaInvestedAmount,
+    smaUseAutoEstimate,
+    setSmaUseAutoEstimate,
+    smaFees,
+    smaTotal,
     totalFees,
     calculateTieredFee,
   };
