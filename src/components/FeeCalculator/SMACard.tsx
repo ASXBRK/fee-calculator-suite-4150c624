@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Minus } from 'lucide-react';
-import { SMAStatus, SMA_EXISTING_FEES, SHAW_SPLIT, BPF_SPLIT } from './types';
+import { SMAStatus, SMA_EXISTING_FEES } from './types';
 
 interface SMACardProps {
   smaStatus: SMAStatus;
@@ -169,16 +169,12 @@ export function SMACard({
             </table>
           </div>
 
-          {/* Fee Split */}
+          {/* Fee Recipient */}
           {smaFees && smaFees.total > 0 && (
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-              <div className="bg-primary/10 rounded-lg p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Shaw & Partners (40%)</p>
-                <p className="text-lg font-semibold text-primary">{formatCurrencyWithDecimals(smaFees.total * SHAW_SPLIT)}</p>
-              </div>
-              <div className="bg-accent/10 rounded-lg p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">BPF Wealth Group (60%)</p>
-                <p className="text-lg font-semibold text-accent-foreground">{formatCurrencyWithDecimals(smaFees.total * BPF_SPLIT)}</p>
+            <div className="pt-4 border-t border-border">
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-xs text-muted-foreground mb-1">Praemium (100%)</p>
+                <p className="text-lg font-semibold text-foreground">{formatCurrencyWithDecimals(smaFees.total)}</p>
               </div>
             </div>
           )}
@@ -290,16 +286,12 @@ export function SMACard({
             </div>
           )}
 
-          {/* Fee Split */}
+          {/* Fee Recipient */}
           {smaFees && smaFees.total > 0 && (useAutoEstimate || smaInvestedAmount > 0) && (
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-              <div className="bg-primary/10 rounded-lg p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Shaw & Partners (40%)</p>
-                <p className="text-lg font-semibold text-primary">{formatCurrencyWithDecimals(smaFees.total * SHAW_SPLIT)}</p>
-              </div>
-              <div className="bg-accent/10 rounded-lg p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">BPF Wealth Group (60%)</p>
-                <p className="text-lg font-semibold text-accent-foreground">{formatCurrencyWithDecimals(smaFees.total * BPF_SPLIT)}</p>
+            <div className="pt-4 border-t border-border">
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-xs text-muted-foreground mb-1">Praemium (100%)</p>
+                <p className="text-lg font-semibold text-foreground">{formatCurrencyWithDecimals(smaFees.total)}</p>
               </div>
             </div>
           )}
