@@ -11,6 +11,7 @@ import { PASMPSCard } from './PASMPSCard';
 import { DocumentServicesCard } from './DocumentServicesCard';
 import { TotalFeesCard } from './TotalFeesCard';
 import { FeeTierSettings } from './FeeTierSettings';
+import { SMACard } from './SMACard';
 
 export function FeeCalculator() {
   const {
@@ -59,6 +60,16 @@ export function FeeCalculator() {
     feeBreakdown,
     smsfFees,
     documentServiceTotal,
+    smaStatus,
+    setSmaStatus,
+    smaAccountCount,
+    setSmaAccountCount,
+    smaInvestedAmount,
+    setSmaInvestedAmount,
+    smaUseAutoEstimate,
+    setSmaUseAutoEstimate,
+    smaFees,
+    smaTotal,
     totalFees
   } = useCalculator();
 
@@ -300,6 +311,22 @@ export function FeeCalculator() {
                 minimumAmount={feeBreakdown.minimumAmount}
               />
             )}
+
+            {/* Step 8: SMA - Show after PAS/MPS */}
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (
+              <SMACard
+                smaStatus={smaStatus}
+                setSmaStatus={setSmaStatus}
+                smaAccountCount={smaAccountCount}
+                setSmaAccountCount={setSmaAccountCount}
+                smaInvestedAmount={smaInvestedAmount}
+                setSmaInvestedAmount={setSmaInvestedAmount}
+                useAutoEstimate={smaUseAutoEstimate}
+                setUseAutoEstimate={setSmaUseAutoEstimate}
+                totalBalance={portfolioTotals.totalBalance}
+                smaFees={smaFees}
+              />
+            )}
           </div>
 
           {/* Right Column - Results */}
@@ -311,7 +338,9 @@ export function FeeCalculator() {
                   <TotalFeesCard 
                     ongoingFee={feeBreakdown.ongoingFeeAmount} 
                     smsfFees={smsfFees ? smsfFees.administrationFee + smsfFees.auditFee + smsfFees.asicAgentFee : 0} 
-                    documentServices={documentServiceTotal} 
+                    documentServices={documentServiceTotal}
+                    pasMps={pasMpsTotal}
+                    sma={smaTotal}
                     total={totalFees} 
                   />
                   <Button 

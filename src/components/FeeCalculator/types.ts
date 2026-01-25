@@ -102,3 +102,31 @@ export const DOCUMENT_SERVICES: DocumentService[] = [
   { id: 'lump-sum', name: 'Lump Sum from Accumulation', fee: 165, selected: false, quantity: 1 },
   { id: 'contribution-splitting', name: 'Contribution Splitting', fee: 165, selected: false, quantity: 1 },
 ];
+
+// SMA Types
+export type SMAStatus = 'na' | 'new' | 'existing' | null;
+
+export interface SMAFeeTier {
+  min: number;
+  max: number;
+  rate: number;
+}
+
+export const SMA_FEE_TIERS: SMAFeeTier[] = [
+  { min: 0, max: 250000, rate: 0.0027 },           // 0.27%
+  { min: 250001, max: 500000, rate: 0.0020 },       // 0.20%
+  { min: 500001, max: 1000000, rate: 0.0011 },      // 0.11%
+  { min: 1000001, max: Infinity, rate: 0.0000 },    // 0.00%
+];
+
+export interface SMAFees {
+  managedFundCustody: number;
+  accountKeepingFee: number;
+  expenseRecoveryFee: number;
+}
+
+export const SMA_EXISTING_FEES: SMAFees = {
+  managedFundCustody: 600,
+  accountKeepingFee: 60,
+  expenseRecoveryFee: 150,
+};

@@ -4,10 +4,12 @@ interface TotalFeesCardProps {
   ongoingFee: number;
   smsfFees: number;
   documentServices: number;
+  pasMps?: number;
+  sma?: number;
   total: number;
 }
 
-export function TotalFeesCard({ ongoingFee, smsfFees, documentServices, total }: TotalFeesCardProps) {
+export function TotalFeesCard({ ongoingFee, smsfFees, documentServices, pasMps = 0, sma = 0, total }: TotalFeesCardProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
@@ -40,6 +42,18 @@ export function TotalFeesCard({ ongoingFee, smsfFees, documentServices, total }:
             <div className="flex justify-between items-center text-primary-foreground/80">
               <span>Document Services</span>
               <span>{formatCurrency(documentServices)}</span>
+            </div>
+          )}
+          {pasMps > 0 && (
+            <div className="flex justify-between items-center text-primary-foreground/80">
+              <span>PAS/MPS Fees</span>
+              <span>{formatCurrency(pasMps)}</span>
+            </div>
+          )}
+          {sma > 0 && (
+            <div className="flex justify-between items-center text-primary-foreground/80">
+              <span>SMA Fees</span>
+              <span>{formatCurrency(sma)}</span>
             </div>
           )}
         </div>
