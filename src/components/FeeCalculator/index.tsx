@@ -274,7 +274,12 @@ export function FeeCalculator() {
               <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} customFees={customFees} setCustomFees={setCustomFees} useEstimate={useEstimate} setUseEstimate={setUseEstimate} />
             )}
 
-            {/* Step 6: PAS/MPS - Show after SMSF answered */}
+            {/* Step 6: Document Services - Only show if Heffron is selected */}
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && administrator === 'heffron' && (
+              <DocumentServicesCard services={documentServices} onToggle={toggleDocumentService} onQuantityChange={updateServiceQuantity} total={documentServiceTotal} />
+            )}
+
+            {/* Step 7: PAS/MPS - Show after SMSF answered */}
             {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (
               <PASMPSCard
                 hasPAS={hasPAS}
@@ -294,11 +299,6 @@ export function FeeCalculator() {
                 minimumApplied={feeBreakdown.minimumApplied}
                 minimumAmount={feeBreakdown.minimumAmount}
               />
-            )}
-
-            {/* Step 7: Document Services - Only show if Heffron is selected */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && administrator === 'heffron' && (
-              <DocumentServicesCard services={documentServices} onToggle={toggleDocumentService} onQuantityChange={updateServiceQuantity} total={documentServiceTotal} />
             )}
           </div>
 
