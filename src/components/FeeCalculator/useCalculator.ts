@@ -18,6 +18,7 @@ import {
   DOCUMENT_SERVICES,
   SMA_FEE_TIERS,
   SMA_EXISTING_FEES,
+  MER_ESTIMATE_PERCENTAGE,
 } from './types';
 
 export function useCalculator() {
@@ -67,6 +68,11 @@ export function useCalculator() {
   const [smaAccountCount, setSmaAccountCount] = useState<number>(1);
   const [smaInvestedAmount, setSmaInvestedAmount] = useState<number>(0);
   const [smaUseAutoEstimate, setSmaUseAutoEstimate] = useState<boolean>(false);
+
+  // MER settings
+  const [includeMER, setIncludeMER] = useState<boolean | null>(null);
+  const [merKnown, setMerKnown] = useState<boolean>(false);
+  const [merPercentage, setMerPercentage] = useState<number>(0);
 
   // Calculate actual fee tiers based on settings
   const feeTiers = useMemo((): FeeTier[] => {
@@ -400,13 +406,22 @@ export function useCalculator() {
     return smaFees?.total || 0;
   }, [smaFees]);
 
+  // Calculate MER fee
+  const merFee = useMemo(() => {
+    if (!includeMER) return 0;
+    
+    const rate = merKnown ? merPercentage : MER_ESTIMATE_PERCENTAGE;
+    return (portfolioTotals.feeableBalance * rate) / 100;
+  }, [includeMER, merKnown, merPercentage, portfolioTotals.feeableBalance]);
+
   const totalFees = useMemo(() => {
     return feeBreakdown.ongoingFeeAmount + 
            (smsfFees?.total || 0) + 
            documentServiceTotal +
            pasMpsTotal +
-           smaTotal;
-  }, [feeBreakdown, smsfFees, documentServiceTotal, pasMpsTotal, smaTotal]);
+           smaTotal +
+           merFee;
+  }, [feeBreakdown, smsfFees, documentServiceTotal, pasMpsTotal, smaTotal, merFee]);
 
   return {
     portfolios,
@@ -466,6 +481,13 @@ export function useCalculator() {
     setSmaUseAutoEstimate,
     smaFees,
     smaTotal,
+    includeMER,
+    setIncludeMER,
+    merKnown,
+    setMerKnown,
+    merPercentage,
+    setMerPercentage,
+    merFee,
     totalFees,
     calculateTieredFee,
   };

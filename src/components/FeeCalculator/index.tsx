@@ -12,6 +12,7 @@ import { DocumentServicesCard } from './DocumentServicesCard';
 import { TotalFeesCard } from './TotalFeesCard';
 import { FeeTierSettings } from './FeeTierSettings';
 import { SMACard } from './SMACard';
+import { MERCard } from './MERCard';
 
 export function FeeCalculator() {
   const {
@@ -70,6 +71,13 @@ export function FeeCalculator() {
     setSmaUseAutoEstimate,
     smaFees,
     smaTotal,
+    includeMER,
+    setIncludeMER,
+    merKnown,
+    setMerKnown,
+    merPercentage,
+    setMerPercentage,
+    merFee,
     totalFees
   } = useCalculator();
 
@@ -327,6 +335,20 @@ export function FeeCalculator() {
                 smaFees={smaFees}
               />
             )}
+
+            {/* Step 9: MER - Show after SMA */}
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (smaStatus !== null) && (
+              <MERCard
+                includeMER={includeMER}
+                setIncludeMER={setIncludeMER}
+                merKnown={merKnown}
+                setMerKnown={setMerKnown}
+                merPercentage={merPercentage}
+                setMerPercentage={setMerPercentage}
+                merFee={merFee}
+                totalBalance={portfolioTotals.feeableBalance}
+              />
+            )}
           </div>
 
           {/* Right Column - Results */}
@@ -341,6 +363,7 @@ export function FeeCalculator() {
                     documentServices={documentServiceTotal}
                     pasMps={pasMpsTotal}
                     sma={smaTotal}
+                    mer={merFee}
                     total={totalFees} 
                   />
                   <Button 

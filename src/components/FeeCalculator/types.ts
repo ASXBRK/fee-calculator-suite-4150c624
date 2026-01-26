@@ -130,3 +130,6 @@ export const SMA_EXISTING_FEES: SMAFees = {
   accountKeepingFee: 60,
   expenseRecoveryFee: 150,
 };
+
+// MER (Management Expense Ratio)
+export const MER_ESTIMATE_PERCENTAGE = 0.15; // 0.15% (based on 0.5% on 30% of total balance)
