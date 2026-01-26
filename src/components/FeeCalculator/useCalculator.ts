@@ -74,6 +74,11 @@ export function useCalculator() {
   const [merKnown, setMerKnown] = useState<boolean>(false);
   const [merPercentage, setMerPercentage] = useState<number>(0);
 
+  // SOA settings
+  const [includeSOA, setIncludeSOA] = useState<boolean | null>(null);
+  const [soaAmount, setSoaAmount] = useState<number>(0);
+  const [soaDiscount, setSoaDiscount] = useState<number>(0); // 0, 25, 50, or 75
+
   // Calculate actual fee tiers based on settings
   const feeTiers = useMemo((): FeeTier[] => {
     const tiers: FeeTier[] = [];
@@ -414,14 +419,21 @@ export function useCalculator() {
     return (portfolioTotals.feeableBalance * rate) / 100;
   }, [includeMER, merKnown, merPercentage, portfolioTotals.feeableBalance]);
 
+  // Calculate SOA fee with discount
+  const soaFee = useMemo(() => {
+    if (!includeSOA || soaAmount <= 0) return 0;
+    return soaAmount * (1 - soaDiscount / 100);
+  }, [includeSOA, soaAmount, soaDiscount]);
+
   const totalFees = useMemo(() => {
     return feeBreakdown.ongoingFeeAmount + 
            (smsfFees?.total || 0) + 
            documentServiceTotal +
            pasMpsTotal +
            smaTotal +
-           merFee;
-  }, [feeBreakdown, smsfFees, documentServiceTotal, pasMpsTotal, smaTotal, merFee]);
+           merFee +
+           soaFee;
+  }, [feeBreakdown, smsfFees, documentServiceTotal, pasMpsTotal, smaTotal, merFee, soaFee]);
 
   return {
     portfolios,
@@ -488,6 +500,13 @@ export function useCalculator() {
     merPercentage,
     setMerPercentage,
     merFee,
+    includeSOA,
+    setIncludeSOA,
+    soaAmount,
+    setSoaAmount,
+    soaDiscount,
+    setSoaDiscount,
+    soaFee,
     totalFees,
     calculateTieredFee,
   };
