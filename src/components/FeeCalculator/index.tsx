@@ -13,6 +13,7 @@ import { TotalFeesCard } from './TotalFeesCard';
 import { FeeTierSettings } from './FeeTierSettings';
 import { SMACard } from './SMACard';
 import { MERCard } from './MERCard';
+import { SOACard } from './SOACard';
 
 export function FeeCalculator() {
   const {
@@ -78,6 +79,13 @@ export function FeeCalculator() {
     merPercentage,
     setMerPercentage,
     merFee,
+    includeSOA,
+    setIncludeSOA,
+    soaAmount,
+    setSoaAmount,
+    soaDiscount,
+    setSoaDiscount,
+    soaFee,
     totalFees
   } = useCalculator();
 
@@ -349,6 +357,19 @@ export function FeeCalculator() {
                 totalBalance={portfolioTotals.feeableBalance}
               />
             )}
+
+            {/* Step 10: SOA Fee - Show after MER */}
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (smaStatus !== null) && (includeMER !== null) && (
+              <SOACard
+                includeSOA={includeSOA}
+                setIncludeSOA={setIncludeSOA}
+                soaAmount={soaAmount}
+                setSoaAmount={setSoaAmount}
+                soaDiscount={soaDiscount}
+                setSoaDiscount={setSoaDiscount}
+                soaFee={soaFee}
+              />
+            )}
           </div>
 
           {/* Right Column - Results */}
@@ -364,6 +385,7 @@ export function FeeCalculator() {
                     pasMps={pasMpsTotal}
                     sma={smaTotal}
                     mer={merFee}
+                    soa={soaFee}
                     total={totalFees} 
                   />
                   <Button 
