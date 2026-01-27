@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Calculator, Download } from 'lucide-react';
+import { Plus, Calculator, Download, ArrowLeft } from 'lucide-react';
 import { useCalculator } from './useCalculator';
 import { useWordExport } from './useWordExport';
 import { PortfolioInput } from './PortfolioInput';
@@ -16,6 +17,7 @@ import { MERCard } from './MERCard';
 import { SOACard } from './SOACard';
 
 export function FeeCalculator() {
+  const navigate = useNavigate();
   const {
     portfolios,
     addPortfolio,
@@ -145,11 +147,19 @@ export function FeeCalculator() {
       <header className="gradient-primary text-primary-foreground py-12 md:py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMCAwdi02aC02djZoNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50" />
         <div className="container mx-auto px-4 relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/home')}
+            className="mb-4 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Apps
+          </Button>
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
               <Calculator className="h-6 w-6" />
             </div>
-            <span className="text-sm font-medium text-primary-foreground/80 uppercase tracking-wider">​</span>
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">BPFee</h1>
           <p className="text-lg text-primary-foreground/80 max-w-xl">
