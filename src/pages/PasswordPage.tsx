@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Lock } from 'lucide-react';
 
-const PASSWORD = 'bpfee2024'; // Change this to your desired password
+const PASSWORD = 'BPFGroup';
 
 export default function PasswordPage() {
   const [password, setPassword] = useState('');
@@ -30,7 +30,7 @@ export default function PasswordPage() {
           <div className="p-3 bg-primary/10 rounded-full mb-4">
             <Lock className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">BPF Wealth Group</h1>
+          <h1 className="text-2xl font-bold text-foreground">BPF</h1>
           <p className="text-muted-foreground mt-1">Enter password to continue</p>
         </div>
 
