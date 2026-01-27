@@ -1,4 +1,5 @@
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import Docxtemplater from 'docxtemplater';
+import PizZip from 'pizzip';
 import { Portfolio, Contribution, FeeBreakdown, DocumentService, SMSFFees } from './types';
 
 interface ExportData {
@@ -30,53 +31,104 @@ const formatCurrency = (value: number) => {
 
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
+    // Fetch the template from public folder
+    const response = await fetch('/template.docx');
+    if (!response.ok) {
+      alert('Template file not found. Please add template.docx to the public folder.');
+      return;
+    }
+    const templateArrayBuffer = await response.arrayBuffer();
+
+    // Load the template
+    const zip = new PizZip(templateArrayBuffer);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    // Calculate values
     const smsfTotal = data.smsfFees
       ? data.smsfFees.administrationFee + data.smsfFees.auditFee + data.smsfFees.asicAgentFee
       : 0;
 
-    const children: Paragraph[] = [];
+    // Prepare template data - add any placeholders you need here
+    const templateData = {
+      // Portfolio data
+      totalPortfolioValue: formatCurrency(data.portfolioTotals.totalBalance),
+      totalAcceleratorBalance: formatCurrency(data.portfolioTotals.totalAccelerator),
+      totalFeeableBalance: formatCurrency(data.portfolioTotals.feeableBalance),
 
-    // Title
-    children.push(new Paragraph({
-      children: [new TextRun({ text: 'BPF Fee Calculator - Summary', bold: true, size: 32 })],
-      heading: HeadingLevel.HEADING_1,
-      spacing: { after: 300 },
-    }));
+      // Contribution data
+      totalContributions: formatCurrency(data.contributionTotals.totalContributions),
+      feeableContributions: formatCurrency(data.contributionTotals.feeableContributions),
 
-    // Fee Summary
-    children.push(new Paragraph({
-      children: [new TextRun({ text: 'Fee Summary', bold: true, size: 28 })],
-      heading: HeadingLevel.HEADING_2,
-      spacing: { before: 300, after: 200 },
-    }));
+      // Fee breakdown
+      ongoingFee: formatCurrency(data.feeBreakdown.ongoingFeeAmount),
+      ongoingFeePercent: data.feeBreakdown.ongoingFeePercent.toFixed(4),
+      shawAmount: formatCurrency(data.feeBreakdown.shawAmount),
+      bpfAmount: formatCurrency(data.feeBreakdown.bpfAmount),
 
-    children.push(new Paragraph({ children: [new TextRun(`Total Portfolio Value: ${formatCurrency(data.portfolioTotals.totalBalance)}`)] }));
-    children.push(new Paragraph({ children: [new TextRun(`Total Feeable Balance: ${formatCurrency(data.portfolioTotals.feeableBalance)}`)] }));
-    children.push(new Paragraph({ children: [new TextRun(`Ongoing Fee: ${formatCurrency(data.feeBreakdown.ongoingFeeAmount)}`)] }));
-    children.push(new Paragraph({ children: [new TextRun(`SMSF Fees: ${formatCurrency(smsfTotal)}`)] }));
-    children.push(new Paragraph({ children: [new TextRun(`Document Services: ${formatCurrency(data.documentServiceTotal)}`)] }));
-    children.push(new Paragraph({
-      children: [new TextRun({ text: `Total Annual Fees: ${formatCurrency(data.totalFees)}`, bold: true })],
-      spacing: { before: 200 },
-    }));
+      // SMSF
+      smsfTotal: formatCurrency(smsfTotal),
+      administrationFee: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee) : '$0',
+      auditFee: data.smsfFees ? formatCurrency(data.smsfFees.auditFee) : '$0',
+      asicAgentFee: data.smsfFees ? formatCurrency(data.smsfFees.asicAgentFee) : '$0',
+      administrator: data.administrator === 'heffron' ? 'Heffron' : data.administrator === 'ryans' ? 'Ryans' : 'Other',
 
-    // Fee Split
-    children.push(new Paragraph({
-      children: [new TextRun({ text: 'Fee Split', bold: true, size: 28 })],
-      heading: HeadingLevel.HEADING_2,
-      spacing: { before: 300, after: 200 },
-    }));
+      // Document services
+      documentServiceTotal: formatCurrency(data.documentServiceTotal),
 
-    children.push(new Paragraph({ children: [new TextRun(`Shaw Amount (40%): ${formatCurrency(data.feeBreakdown.shawAmount)}`)] }));
-    children.push(new Paragraph({ children: [new TextRun(`BPF Amount (60%): ${formatCurrency(data.feeBreakdown.bpfAmount)}`)] }));
+      // Total
+      totalFees: formatCurrency(data.totalFees),
 
-    const doc = new Document({
-      sections: [{ children }],
+      // Settings
+      gstTreatment: data.isGstExcluding ? 'GST Excluding' : 'GST Inclusive',
+      acceleratorFeesCharged: data.chargeAcceleratorFees ? 'Yes' : 'No',
+      isSMSF: data.isSMSF ? 'Yes' : 'No',
+
+      // Arrays for tables (if needed)
+      portfolios: data.portfolios.map(p => ({
+        name: p.name,
+        balance: formatCurrency(p.balance),
+        acceleratorBalance: formatCurrency(p.acceleratorBalance),
+        feeableValue: formatCurrency(p.balance - (data.chargeAcceleratorFees === false ? p.acceleratorBalance : 0)),
+      })),
+
+      contributions: data.contributions.map(c => {
+        let feeableAmount = c.amount;
+        if (c.type === 'concessional') {
+          feeableAmount = c.div293Applicable ? c.amount * 0.7 : c.amount * 0.85;
+        }
+        return {
+          type: c.type === 'rollover' ? 'Rollover' : c.type === 'ncc' ? 'Non-concessional' : 'Concessional',
+          amount: formatCurrency(c.amount),
+          div293: c.type === 'concessional' ? (c.div293Applicable ? 'Yes' : 'No') : 'N/A',
+          feeableAmount: formatCurrency(feeableAmount),
+        };
+      }),
+
+      documentServices: data.documentServices.filter(s => s.selected).map(s => ({
+        name: s.name,
+        quantity: s.quantity,
+        fee: formatCurrency(s.fee),
+        total: formatCurrency(s.fee * s.quantity),
+      })),
+
+      // Date
+      date: new Date().toLocaleDateString('en-AU'),
+    };
+
+    // Render the document
+    doc.render(templateData);
+
+    // Generate output
+    const output = doc.getZip().generate({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     });
 
-    // Generate and download - use toBlob for browser
-    const blob = await Packer.toBlob(doc);
-    const url = window.URL.createObjectURL(blob);
+    // Download
+    const url = window.URL.createObjectURL(output);
     const link = document.createElement('a');
     link.href = url;
     link.download = `BPF_Fee_Calculation_${new Date().toISOString().split('T')[0]}.docx`;
