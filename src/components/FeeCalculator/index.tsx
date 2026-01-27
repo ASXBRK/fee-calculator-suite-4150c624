@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Plus, Calculator, Download } from 'lucide-react';
 import { useCalculator } from './useCalculator';
-import { useExcelExport } from './useExcelExport';
+import { useWordExport } from './useWordExport';
 import { PortfolioInput } from './PortfolioInput';
 import { ContributionInput } from './ContributionInput';
 import { FeeBreakdownCard } from './FeeBreakdownCard';
@@ -89,10 +89,10 @@ export function FeeCalculator() {
     totalFees
   } = useCalculator();
 
-  const { exportToExcel } = useExcelExport();
+  const { exportToWord } = useWordExport();
 
   const handleExport = () => {
-    exportToExcel({
+    exportToWord({
       portfolios,
       contributions,
       contributionTotals,
@@ -394,7 +394,7 @@ export function FeeCalculator() {
                     variant="outline"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Export to Excel
+                    Export to Word
                   </Button>
                 </>
               )}

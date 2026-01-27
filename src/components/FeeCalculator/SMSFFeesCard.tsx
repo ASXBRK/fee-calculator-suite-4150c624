@@ -70,7 +70,7 @@ export function SMSFFeesCard({
 
       {/* SMSF Yes/No Question */}
       <div className="mb-6">
-        <Label className="text-foreground font-medium mb-3 block">Do you have an SMSF?</Label>
+        <Label className="text-foreground font-medium mb-3 block">Do they have an SMSF?</Label>
         <RadioGroup
           value={isSMSF === null ? '' : isSMSF ? 'yes' : 'no'}
           onValueChange={(value) => {
