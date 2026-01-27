@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { Calculator, FileText, Users, TrendingUp } from 'lucide-react';
+import { Calculator, GitBranch } from 'lucide-react';
 
 interface AppCardProps {
   title: string;
@@ -56,24 +56,10 @@ export default function HomePage() {
       available: true,
     },
     {
-      title: 'Client Reports',
-      description: 'Generate and manage client reports',
-      icon: <FileText className="h-6 w-6 text-primary" />,
-      href: '/reports',
-      available: false,
-    },
-    {
-      title: 'Client Management',
-      description: 'Manage client information and portfolios',
-      icon: <Users className="h-6 w-6 text-primary" />,
-      href: '/clients',
-      available: false,
-    },
-    {
-      title: 'Performance Tracker',
-      description: 'Track portfolio performance and analytics',
-      icon: <TrendingUp className="h-6 w-6 text-primary" />,
-      href: '/performance',
+      title: 'Workflow Tracker',
+      description: 'Track and manage workflow tasks and processes',
+      icon: <GitBranch className="h-6 w-6 text-primary" />,
+      href: '/workflow',
       available: false,
     },
   ];
@@ -82,7 +68,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <header className="gradient-primary text-primary-foreground py-12">
         <div className="container mx-auto px-4">
-          <h1 className="font-display text-3xl md:text-4xl font-bold">BPF Wealth Group</h1>
+          <h1 className="font-display text-3xl md:text-4xl font-bold">BPF</h1>
           <p className="text-primary-foreground/80 mt-2">Select an application to continue</p>
         </div>
       </header>
