@@ -151,7 +151,7 @@ export function FeeCalculator() {
             </div>
             <span className="text-sm font-medium text-primary-foreground/80 uppercase tracking-wider">​</span>
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">BPF Fee Calculator</h1>
+          <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">BPFee</h1>
           <p className="text-lg text-primary-foreground/80 max-w-xl">
         </p>
         </div>
