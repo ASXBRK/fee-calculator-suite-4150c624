@@ -109,7 +109,26 @@ export function FeeCalculator() {
       numberOfTiers,
       isGstExcluding,
       isSMSF,
-      administrator
+      administrator,
+      // Additional data for template
+      hasPAS,
+      hasMPS,
+      pasItems,
+      mpsItems,
+      pasMpsTotal,
+      smaStatus,
+      smaAccountCount,
+      smaInvestedAmount,
+      smaFees,
+      smaTotal,
+      includeMER,
+      merKnown,
+      merPercentage,
+      merFee,
+      includeSOA,
+      soaAmount,
+      soaDiscount,
+      soaFee,
     });
   };
 
