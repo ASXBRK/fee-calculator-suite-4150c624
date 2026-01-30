@@ -54,13 +54,14 @@ const formatPercent = (value: number, decimals = 2) => {
 
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
-    // Fetch the template from public folder
-    const response = await fetch('/Fee%20Calc%20Template.docx');
-    if (!response.ok) {
-      alert('Template file not found. Please add Fee Calc Template.docx to the public folder.');
-      return;
-    }
-    const templateArrayBuffer = await response.arrayBuffer();
+    try {
+      // Fetch the template from public folder
+      const response = await fetch('/Fee%20Calc%20Template.docx');
+      if (!response.ok) {
+        alert('Template file not found. Please add Fee Calc Template.docx to the public folder.');
+        return;
+      }
+      const templateArrayBuffer = await response.arrayBuffer();
 
     // Load the template
     const zip = new PizZip(templateArrayBuffer);
@@ -299,6 +300,10 @@ export function useWordExport() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Error exporting document: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
   return { exportToWord };
