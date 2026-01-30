@@ -54,14 +54,18 @@ const formatPercent = (value: number, decimals = 2) => {
 
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
+    console.log('Export function called');
+    alert('Export started - fetching template...');
     try {
       // Fetch the template from public folder
       const response = await fetch('/Fee%20Calc%20Template.docx');
+      console.log('Fetch response:', response.status);
       if (!response.ok) {
         alert('Template file not found. Please add Fee Calc Template.docx to the public folder.');
         return;
       }
       const templateArrayBuffer = await response.arrayBuffer();
+      console.log('Template loaded, size:', templateArrayBuffer.byteLength);
 
     // Load the template
     const zip = new PizZip(templateArrayBuffer);
