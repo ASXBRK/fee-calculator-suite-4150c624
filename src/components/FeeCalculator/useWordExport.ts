@@ -32,9 +32,9 @@ const formatCurrency = (value: number) => {
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
     // Fetch the template from public folder
-    const response = await fetch('/template.docx');
+    const response = await fetch('/fee_disclosure_Template.docx');
     if (!response.ok) {
-      alert('Template file not found. Please add template.docx to the public folder.');
+      alert('Template file not found. Please add fee_disclosure_Template.docx to the public folder.');
       return;
     }
     const templateArrayBuffer = await response.arrayBuffer();
