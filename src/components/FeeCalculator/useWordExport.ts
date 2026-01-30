@@ -55,9 +55,9 @@ const formatPercent = (value: number, decimals = 2) => {
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
     // Fetch the template from public folder
-    const response = await fetch('/fee_disclosure_template.docx');
+    const response = await fetch('/Fee%20Calc%20Template.docx');
     if (!response.ok) {
-      alert('Template file not found. Please add fee_disclosure_template.docx to the public folder.');
+      alert('Template file not found. Please add Fee Calc Template.docx to the public folder.');
       return;
     }
     const templateArrayBuffer = await response.arrayBuffer();
