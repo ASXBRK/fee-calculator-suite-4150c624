@@ -55,9 +55,9 @@ const formatPercent = (value: number, decimals = 2) => {
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
     // Fetch the template from public folder
-    const response = await fetch('/fee_disclosure_template.docx');
+    const response = await fetch('/Fee%20Calc%20Template.docx');
     if (!response.ok) {
-      alert('Template file not found. Please add fee_disclosure_template.docx to the public folder.');
+      alert('Template file not found. Please add Fee Calc Template.docx to the public folder.');
       return;
     }
     const templateArrayBuffer = await response.arrayBuffer();
@@ -74,39 +74,79 @@ export function useWordExport() {
       ? data.smsfFees.administrationFee + data.smsfFees.auditFee + data.smsfFees.asicAgentFee
       : 0;
 
+    // Entity name based on number of portfolios
+    const entityName = data.portfolios.length > 1 ? "Investment Portfolio's" : "Investment Portfolio";
+
+    // Tier thresholds (first $1M, $1M-$2M, $2M+)
+    const tierThresholds = [0, 1000000, 2000000];
+
     // Build fee scale description
     const feeScaleDescription = data.tierRates
       .slice(0, data.numberOfTiers)
       .map((rate) => `${rate}%`)
       .join(' / ');
 
-    // Build fee rate tiers for the table
-    const tierThresholds = [0, 500000, 1000000, 2000000, 5000000];
+    // Build fee rate tiers table (showing the rate scale)
     const feeRateTiers = data.tierRates.slice(0, data.numberOfTiers).map((rate, i) => {
       const min = tierThresholds[i] || 0;
       const max = tierThresholds[i + 1];
-      const tierRange = max
-        ? `${formatCurrency(min)} - ${formatCurrency(max)}`
-        : `${formatCurrency(min)}+`;
+      let tierRange: string;
+      if (i === 0) {
+        tierRange = `First ${formatCurrency(max || 1000000)}`;
+      } else if (max) {
+        tierRange = `${formatCurrency(min)} - ${formatCurrency(max)}`;
+      } else {
+        tierRange = `${formatCurrency(min)}+`;
+      }
       return {
         tierRange,
         tierRate: formatPercent(rate),
       };
     });
 
-    // Build fee tiers breakdown per portfolio
-    const feeTiers = data.portfolios.map(p => {
-      const feeableValue = p.balance - (data.chargeAcceleratorFees === false ? p.acceleratorBalance : 0);
-      const tierFee = feeableValue * (data.feeBreakdown.ongoingFeePercent / 100);
-      return {
-        entityName: p.name,
-        tierBalance: formatCurrency(feeableValue),
-        tierPercent: formatPercent(data.feeBreakdown.ongoingFeePercent, 4),
-        tierFee: formatCurrency(tierFee),
-        tierShawFee: formatCurrency(tierFee * SHAW_SPLIT),
-        tierBPFFee: formatCurrency(tierFee * BPF_SPLIT),
-      };
-    });
+    // Build fee tiers breakdown BY TIER (not by portfolio)
+    // This splits the total feeable balance across the tiers
+    const totalFeeableBalance = data.portfolioTotals.feeableBalance;
+    const feeTiers: Array<{
+      entityName: string;
+      tierBalance: string;
+      tierPercent: string;
+      tierFee: string;
+      tierShawFee: string;
+      tierBPFFee: string;
+    }> = [];
+
+    let remainingBalance = totalFeeableBalance;
+    for (let i = 0; i < data.numberOfTiers; i++) {
+      const tierMin = tierThresholds[i] || 0;
+      const tierMax = tierThresholds[i + 1] || Infinity;
+      const tierSize = tierMax - tierMin;
+      const rate = data.tierRates[i] || 0;
+
+      // Calculate how much of the balance falls in this tier
+      let balanceInTier = 0;
+      if (remainingBalance > 0) {
+        if (tierMax === Infinity) {
+          // Last tier gets all remaining
+          balanceInTier = remainingBalance;
+        } else {
+          balanceInTier = Math.min(remainingBalance, tierSize);
+        }
+        remainingBalance -= balanceInTier;
+      }
+
+      if (balanceInTier > 0) {
+        const tierFee = balanceInTier * (rate / 100);
+        feeTiers.push({
+          entityName,
+          tierBalance: formatCurrency(balanceInTier),
+          tierPercent: formatPercent(rate),
+          tierFee: formatCurrency(tierFee),
+          tierShawFee: formatCurrency(tierFee * SHAW_SPLIT),
+          tierBPFFee: formatCurrency(tierFee * BPF_SPLIT),
+        });
+      }
+    }
 
     // Document services for table
     const selectedDocServices = data.documentServices.filter(s => s.selected);
@@ -124,13 +164,21 @@ export function useWordExport() {
 
     // Calculate totals
     const totalOngoingFees = data.feeBreakdown.ongoingFeeAmount + data.pasMpsTotal + data.smaTotal;
-    const totalOtherFees = data.merFee + smsfTotal + (data.isSMSF ? 259 : 0); // ASIC levy
+    const totalOtherFees = data.merFee + smsfTotal + (data.isSMSF ? 259 : 0); // MER + SMSF admin + ASIC levy
 
     // SOA fee calculations
     const soaFeeFullAmount = data.soaAmount;
     const soaFeeDiscounted = data.soaAmount * (1 - data.soaDiscount / 100);
     const soaFeeShaw = soaFeeDiscounted * SHAW_SPLIT;
     const soaFeeBPF = soaFeeDiscounted * BPF_SPLIT;
+
+    // MER entities - single row with entity name
+    const merEntities = data.includeMER ? [{
+      entityName,
+      entityBalance: formatCurrency(data.portfolioTotals.feeableBalance),
+      entityMERPercent: formatPercent(data.merPercentage),
+      entityMERFee: formatCurrency(data.merFee),
+    }] : [];
 
     // Prepare template data
     const templateData = {
@@ -205,11 +253,11 @@ export function useWordExport() {
       merTotalValue: formatCurrency(data.portfolioTotals.feeableBalance),
       merCalculationNote: 'Investment management costs are charged by fund managers on your investments.',
       merEstimateNote: 'This is an estimate based on typical managed fund fees.',
-      merEntityName: 'Portfolio',
+      merEntityName: entityName,
       merEstimatedBalance: formatCurrency(data.portfolioTotals.feeableBalance),
       merEstimatedPercent: formatPercent(data.merPercentage),
       merEstimatedFee: formatCurrency(data.merFee),
-      merEntities: [],
+      merEntities,
       merHoldings: [],
 
       // SOA Fee
