@@ -1,6 +1,6 @@
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
-import { Portfolio, Contribution, FeeBreakdown, DocumentService, SMSFFees } from './types';
+import { Portfolio, Contribution, FeeBreakdown, DocumentService, SMSFFees, PASMPSItem, SMAStatus, SMAFees, SHAW_SPLIT, BPF_SPLIT } from './types';
 
 interface ExportData {
   portfolios: Portfolio[];
@@ -18,6 +18,25 @@ interface ExportData {
   isGstExcluding: boolean;
   isSMSF: boolean | null;
   administrator: 'heffron' | 'ryans' | 'other' | null;
+  // Additional data
+  hasPAS: boolean | null;
+  hasMPS: boolean | null;
+  pasItems: PASMPSItem[];
+  mpsItems: PASMPSItem[];
+  pasMpsTotal: number;
+  smaStatus: SMAStatus;
+  smaAccountCount: number;
+  smaInvestedAmount: number;
+  smaFees: SMAFees | null;
+  smaTotal: number;
+  includeMER: boolean | null;
+  merKnown: boolean | null;
+  merPercentage: number;
+  merFee: number;
+  includeSOA: boolean | null;
+  soaAmount: number;
+  soaDiscount: number;
+  soaFee: number;
 }
 
 const formatCurrency = (value: number) => {
@@ -29,12 +48,16 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+const formatPercent = (value: number, decimals = 2) => {
+  return `${value.toFixed(decimals)}%`;
+};
+
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
     // Fetch the template from public folder
-    const response = await fetch('/fee_disclosure_Template.docx');
+    const response = await fetch('/fee_disclosure_template.docx');
     if (!response.ok) {
-      alert('Template file not found. Please add fee_disclosure_Template.docx to the public folder.');
+      alert('Template file not found. Please add fee_disclosure_template.docx to the public folder.');
       return;
     }
     const templateArrayBuffer = await response.arrayBuffer();
@@ -51,71 +74,163 @@ export function useWordExport() {
       ? data.smsfFees.administrationFee + data.smsfFees.auditFee + data.smsfFees.asicAgentFee
       : 0;
 
-    // Prepare template data - add any placeholders you need here
+    // Build fee scale description
+    const feeScaleDescription = data.tierRates
+      .slice(0, data.numberOfTiers)
+      .map((rate) => `${rate}%`)
+      .join(' / ');
+
+    // Build fee rate tiers for the table
+    const tierThresholds = [0, 500000, 1000000, 2000000, 5000000];
+    const feeRateTiers = data.tierRates.slice(0, data.numberOfTiers).map((rate, i) => {
+      const min = tierThresholds[i] || 0;
+      const max = tierThresholds[i + 1];
+      const tierRange = max
+        ? `${formatCurrency(min)} - ${formatCurrency(max)}`
+        : `${formatCurrency(min)}+`;
+      return {
+        tierRange,
+        tierRate: formatPercent(rate),
+      };
+    });
+
+    // Build fee tiers breakdown per portfolio
+    const feeTiers = data.portfolios.map(p => {
+      const feeableValue = p.balance - (data.chargeAcceleratorFees === false ? p.acceleratorBalance : 0);
+      const tierFee = feeableValue * (data.feeBreakdown.ongoingFeePercent / 100);
+      return {
+        entityName: p.name,
+        tierBalance: formatCurrency(feeableValue),
+        tierPercent: formatPercent(data.feeBreakdown.ongoingFeePercent, 4),
+        tierFee: formatCurrency(tierFee),
+        tierShawFee: formatCurrency(tierFee * SHAW_SPLIT),
+        tierBPFFee: formatCurrency(tierFee * BPF_SPLIT),
+      };
+    });
+
+    // Document services for table
+    const selectedDocServices = data.documentServices.filter(s => s.selected);
+    const documentServicesData = selectedDocServices.map(s => ({
+      serviceName: s.name,
+      serviceFee: formatCurrency(s.fee * s.quantity),
+      servicePaidTo: 'Heffron',
+    }));
+
+    // Heffron doc services (same as document services for now)
+    const heffronDocServices = selectedDocServices.map(s => ({
+      docServiceName: s.name,
+      docServiceFee: formatCurrency(s.fee * s.quantity),
+    }));
+
+    // Calculate totals
+    const totalOngoingFees = data.feeBreakdown.ongoingFeeAmount + data.pasMpsTotal + data.smaTotal;
+    const totalOtherFees = data.merFee + smsfTotal + (data.isSMSF ? 259 : 0); // ASIC levy
+
+    // SOA fee calculations
+    const soaFeeFullAmount = data.soaAmount;
+    const soaFeeDiscounted = data.soaAmount * (1 - data.soaDiscount / 100);
+    const soaFeeShaw = soaFeeDiscounted * SHAW_SPLIT;
+    const soaFeeBPF = soaFeeDiscounted * BPF_SPLIT;
+
+    // Prepare template data
     const templateData = {
-      // Portfolio data
-      totalPortfolioValue: formatCurrency(data.portfolioTotals.totalBalance),
-      totalAcceleratorBalance: formatCurrency(data.portfolioTotals.totalAccelerator),
+      // Main totals
+      totalBalance: formatCurrency(data.portfolioTotals.totalBalance),
       totalFeeableBalance: formatCurrency(data.portfolioTotals.feeableBalance),
 
-      // Contribution data
-      totalContributions: formatCurrency(data.contributionTotals.totalContributions),
-      feeableContributions: formatCurrency(data.contributionTotals.feeableContributions),
+      // Ongoing advice fee
+      ongoingAdviceFee: formatCurrency(data.feeBreakdown.ongoingFeeAmount),
+      ongoingAdviceFeePercent: formatPercent(data.feeBreakdown.ongoingFeePercent, 4),
+      totalShawFee: formatCurrency(data.feeBreakdown.shawAmount),
+      totalBPFFee: formatCurrency(data.feeBreakdown.bpfAmount),
 
-      // Fee breakdown
-      ongoingFee: formatCurrency(data.feeBreakdown.ongoingFeeAmount),
-      ongoingFeePercent: data.feeBreakdown.ongoingFeePercent.toFixed(4),
-      shawAmount: formatCurrency(data.feeBreakdown.shawAmount),
-      bpfAmount: formatCurrency(data.feeBreakdown.bpfAmount),
+      // Fee tiers
+      feeTiers,
+      feeRateTiers,
+      feeScaleDescription,
+      balanceCalculationNote: data.chargeAcceleratorFees === false
+        ? 'The fee is calculated on your total portfolio balance, excluding cash in your Accelerator account.'
+        : 'The fee is calculated on your total portfolio balance.',
+
+      // Conditionals
+      excludeAccelerator: data.chargeAcceleratorFees === false,
+      isSMSF: data.isSMSF === true,
+      isHeffron: data.administrator === 'heffron',
+      isRyans: data.administrator === 'ryans',
+      hasOngoingSMSFAdmin: data.isSMSF === true && data.smsfFees !== null,
+      isEstimateSMSFAdmin: data.administrator === 'other',
 
       // SMSF
-      smsfTotal: formatCurrency(smsfTotal),
-      administrationFee: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee) : '$0',
-      auditFee: data.smsfFees ? formatCurrency(data.smsfFees.auditFee) : '$0',
-      asicAgentFee: data.smsfFees ? formatCurrency(data.smsfFees.asicAgentFee) : '$0',
-      administrator: data.administrator === 'heffron' ? 'Heffron' : data.administrator === 'ryans' ? 'Ryans' : 'Other',
+      smsfAdminFee: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee + data.smsfFees.auditFee) : '',
+      smsfAdministrator: data.administrator === 'heffron' ? 'Heffron' : data.administrator === 'ryans' ? 'Ryans' : 'Your Administrator',
 
       // Document services
-      documentServiceTotal: formatCurrency(data.documentServiceTotal),
+      documentServices: documentServicesData,
+      heffronDocServices,
+      hasPensionEstablishment: selectedDocServices.some(s => s.id === 'pension-establishment'),
+      hasCommutation: selectedDocServices.some(s => s.id === 'pension-commutation'),
+      hasLumpSum: selectedDocServices.some(s => s.id === 'lump-sum'),
+      hasContributionSplitting: selectedDocServices.some(s => s.id === 'contribution-splitting'),
 
-      // Total
-      totalFees: formatCurrency(data.totalFees),
+      // Portfolio Service (PAS/MPS)
+      hasPortfolioService: data.hasPAS === true || data.hasMPS === true,
+      portfolioServiceName: data.hasPAS ? 'Portfolio Administration Service (PAS)' : data.hasMPS ? 'Managed Portfolio Service (MPS)' : '',
+      portfolioServiceFee: formatCurrency(data.pasMpsTotal),
+      portfolioServiceTitle: data.hasPAS ? 'Portfolio Administration Service' : data.hasMPS ? 'Managed Portfolio Service' : '',
+      isExistingPortfolioService: (data.hasPAS && data.pasItems.some(i => i.isNew === false)) || (data.hasMPS && data.mpsItems.some(i => i.isNew === false)),
+      isNewPortfolioService: (data.hasPAS && data.pasItems.some(i => i.isNew === true)) || (data.hasMPS && data.mpsItems.some(i => i.isNew === true)),
+      portfolioServiceAccountNote: `Based on ${data.pasItems.length + data.mpsItems.length} account(s).`,
 
-      // Settings
-      gstTreatment: data.isGstExcluding ? 'GST Excluding' : 'GST Inclusive',
-      acceleratorFeesCharged: data.chargeAcceleratorFees ? 'Yes' : 'No',
-      isSMSF: data.isSMSF ? 'Yes' : 'No',
+      // SMA
+      hasSMA: data.smaStatus === 'new' || data.smaStatus === 'existing',
+      isExistingSMA: data.smaStatus === 'existing',
+      isNewSMA: data.smaStatus === 'new',
+      smaFee: formatCurrency(data.smaTotal),
+      smaFeeType: data.smaStatus === 'new' ? 'Tiered %' : 'Fixed',
+      smaTotalFee: formatCurrency(data.smaTotal),
+      smaTotalPercent: data.smaInvestedAmount > 0 ? formatPercent((data.smaTotal / data.smaInvestedAmount) * 100) : '',
+      smaAccountNote: `Based on ${data.smaAccountCount} SMA account(s).`,
+      smaBalanceNote: `Based on estimated SMA balance of ${formatCurrency(data.smaInvestedAmount)}.`,
+      smaAdminFee: data.smaFees ? formatCurrency(data.smaFees.accountKeepingFee + data.smaFees.expenseRecoveryFee) : '',
+      smaAdminFeePercent: '',
 
-      // Arrays for tables (if needed)
-      portfolios: data.portfolios.map(p => ({
-        name: p.name,
-        balance: formatCurrency(p.balance),
-        acceleratorBalance: formatCurrency(p.acceleratorBalance),
-        feeableValue: formatCurrency(p.balance - (data.chargeAcceleratorFees === false ? p.acceleratorBalance : 0)),
-      })),
+      // MER
+      hasMER: data.includeMER === true,
+      isKnownMER: data.merKnown === true,
+      isEstimateMER: data.merKnown === false,
+      merPercent: formatPercent(data.merPercentage),
+      merFee: formatCurrency(data.merFee),
+      merTotalFee: formatCurrency(data.merFee),
+      merTotalPercent: formatPercent(data.merPercentage),
+      merTotalValue: formatCurrency(data.portfolioTotals.feeableBalance),
+      merCalculationNote: 'Investment management costs are charged by fund managers on your investments.',
+      merEstimateNote: 'This is an estimate based on typical managed fund fees.',
+      merEntityName: 'Portfolio',
+      merEstimatedBalance: formatCurrency(data.portfolioTotals.feeableBalance),
+      merEstimatedPercent: formatPercent(data.merPercentage),
+      merEstimatedFee: formatCurrency(data.merFee),
+      merEntities: [],
+      merHoldings: [],
 
-      contributions: data.contributions.map(c => {
-        let feeableAmount = c.amount;
-        if (c.type === 'concessional') {
-          feeableAmount = c.div293Applicable ? c.amount * 0.7 : c.amount * 0.85;
-        }
-        return {
-          type: c.type === 'rollover' ? 'Rollover' : c.type === 'ncc' ? 'Non-concessional' : 'Concessional',
-          amount: formatCurrency(c.amount),
-          div293: c.type === 'concessional' ? (c.div293Applicable ? 'Yes' : 'No') : 'N/A',
-          feeableAmount: formatCurrency(feeableAmount),
-        };
-      }),
+      // SOA Fee
+      hasSOAFee: data.includeSOA === true && data.soaFee > 0,
+      soaFeeType: 'Statement of Advice',
+      soaFeeAmount: formatCurrency(data.soaFee),
+      soaFeePaidTo: 'Shaw/BPF',
+      soaFeeFullAmount: formatCurrency(soaFeeFullAmount),
+      soaFeeDiscounted: formatCurrency(soaFeeDiscounted),
+      soaFeeShaw: formatCurrency(soaFeeShaw),
+      soaFeeBPF: formatCurrency(soaFeeBPF),
+      soaFeeDeductible: formatCurrency(soaFeeDiscounted),
 
-      documentServices: data.documentServices.filter(s => s.selected).map(s => ({
-        name: s.name,
-        quantity: s.quantity,
-        fee: formatCurrency(s.fee),
-        total: formatCurrency(s.fee * s.quantity),
-      })),
-
-      // Date
-      date: new Date().toLocaleDateString('en-AU'),
+      // Totals
+      totalInitialFees: formatCurrency(data.documentServiceTotal + data.soaFee),
+      totalOngoingFees: formatCurrency(totalOngoingFees),
+      totalOngoingPercent: formatPercent(data.feeBreakdown.ongoingFeePercent, 4),
+      totalOtherFees: formatCurrency(totalOtherFees),
+      totalOtherPercent: data.portfolioTotals.feeableBalance > 0
+        ? formatPercent((totalOtherFees / data.portfolioTotals.feeableBalance) * 100)
+        : '',
     };
 
     // Render the document
@@ -131,7 +246,7 @@ export function useWordExport() {
     const url = window.URL.createObjectURL(output);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `BPF_Fee_Calculation_${new Date().toISOString().split('T')[0]}.docx`;
+    link.download = `Fee_Disclosure_${new Date().toISOString().split('T')[0]}.docx`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
