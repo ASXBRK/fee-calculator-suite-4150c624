@@ -72,7 +72,7 @@ export function useWordExport() {
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      nullGetter: () => '', // Return empty string for undefined values
+      nullGetter: () => 'XXXX', // Return XXXX for missing values
     });
 
     // Calculate values
@@ -307,8 +307,22 @@ export function useWordExport() {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
     console.log('Export complete');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Export error:', error);
+      // Log detailed errors from docxtemplater
+      if (error && typeof error === 'object' && 'properties' in error) {
+        const err = error as { properties?: { errors?: Array<{ properties?: { id?: string; explanation?: string; file?: string } }> } };
+        if (err.properties?.errors) {
+          console.log('Template errors found:');
+          const errorMessages = err.properties.errors.map((e, i) => {
+            const msg = `${i + 1}. ${e.properties?.id || 'Unknown'}: ${e.properties?.explanation || 'No details'}`;
+            console.log(msg);
+            return msg;
+          });
+          alert('Template errors:\n' + errorMessages.slice(0, 5).join('\n') + (errorMessages.length > 5 ? `\n...and ${errorMessages.length - 5} more` : ''));
+          return;
+        }
+      }
       alert('Error exporting document: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
