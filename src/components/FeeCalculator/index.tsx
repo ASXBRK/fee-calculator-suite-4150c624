@@ -93,8 +93,9 @@ export function FeeCalculator() {
 
   const { exportToWord } = useWordExport();
 
-  const handleExport = () => {
-    exportToWord({
+  const handleExport = async () => {
+    console.log('handleExport called');
+    await exportToWord({
       portfolios,
       contributions,
       contributionTotals,
