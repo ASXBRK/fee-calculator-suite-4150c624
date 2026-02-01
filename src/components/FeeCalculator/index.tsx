@@ -95,42 +95,47 @@ export function FeeCalculator() {
 
   const handleExport = async () => {
     console.log('handleExport called');
-    await exportToWord({
-      portfolios,
-      contributions,
-      contributionTotals,
-      portfolioTotals,
-      chargeAcceleratorFees,
-      feeBreakdown,
-      smsfFees,
-      documentServices,
-      documentServiceTotal,
-      totalFees,
-      tierRates,
-      numberOfTiers,
-      isGstExcluding,
-      isSMSF,
-      administrator,
-      // Additional data for template
-      hasPAS,
-      hasMPS,
-      pasItems,
-      mpsItems,
-      pasMpsTotal,
-      smaStatus,
-      smaAccountCount,
-      smaInvestedAmount,
-      smaFees,
-      smaTotal,
-      includeMER,
-      merKnown,
-      merPercentage,
-      merFee,
-      includeSOA,
-      soaAmount,
-      soaDiscount,
-      soaFee,
-    });
+    try {
+      await exportToWord({
+        portfolios,
+        contributions,
+        contributionTotals,
+        portfolioTotals,
+        chargeAcceleratorFees,
+        feeBreakdown,
+        smsfFees,
+        documentServices,
+        documentServiceTotal,
+        totalFees,
+        tierRates,
+        numberOfTiers,
+        isGstExcluding,
+        isSMSF,
+        administrator,
+        // Additional data for template
+        hasPAS,
+        hasMPS,
+        pasItems,
+        mpsItems,
+        pasMpsTotal,
+        smaStatus,
+        smaAccountCount,
+        smaInvestedAmount,
+        smaFees,
+        smaTotal,
+        includeMER,
+        merKnown,
+        merPercentage,
+        merFee,
+        includeSOA,
+        soaAmount,
+        soaDiscount,
+        soaFee,
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Check console for details.');
+    }
   };
 
   // Check if fee tiers have been configured
