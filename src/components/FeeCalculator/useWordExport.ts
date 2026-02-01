@@ -72,6 +72,7 @@ export function useWordExport() {
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
+      nullGetter: () => '', // Return empty string for undefined values
     });
 
     // Calculate values
