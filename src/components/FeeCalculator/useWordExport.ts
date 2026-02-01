@@ -54,13 +54,18 @@ const formatPercent = (value: number, decimals = 2) => {
 
 export function useWordExport() {
   const exportToWord = async (data: ExportData) => {
-    // Fetch the template from public folder
-    const response = await fetch('/Fee%20Calc%20Template.docx');
-    if (!response.ok) {
-      alert('Template file not found. Please add Fee Calc Template.docx to the public folder.');
-      return;
-    }
-    const templateArrayBuffer = await response.arrayBuffer();
+    console.log('Export function called');
+    try {
+      // Fetch the template from public folder
+      console.log('Fetching template...');
+      const response = await fetch('/Fee%20Calc%20Template.docx');
+      console.log('Fetch response:', response.status);
+      if (!response.ok) {
+        alert('Template file not found. Please add Fee Calc Template.docx to the public folder.');
+        return;
+      }
+      const templateArrayBuffer = await response.arrayBuffer();
+      console.log('Template loaded, size:', templateArrayBuffer.byteLength);
 
     // Load the template
     const zip = new PizZip(templateArrayBuffer);
@@ -291,6 +296,7 @@ export function useWordExport() {
     });
 
     // Download
+    console.log('Downloading file...');
     const url = window.URL.createObjectURL(output);
     const link = document.createElement('a');
     link.href = url;
@@ -299,6 +305,11 @@ export function useWordExport() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+    console.log('Export complete');
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Error exporting document: ' + (error instanceof Error ? error.message : String(error)));
+    }
   };
 
   return { exportToWord };
