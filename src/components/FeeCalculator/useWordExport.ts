@@ -202,6 +202,19 @@ export function useWordExport() {
     const tier2 = tierData[1] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
     const tier3 = tierData[2] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
 
+    // Debug logging
+    console.log('Tier data:', {
+      totalFeeableBalance,
+      actualTierCount,
+      numberOfTiers: data.numberOfTiers,
+      tier1Balance: tier1.balance,
+      tier2Balance: tier2.balance,
+      tier3Balance: tier3.balance,
+      hasOneTier: actualTierCount === 1,
+      hasTwoTiers: actualTierCount === 2,
+      hasThreeTiers: actualTierCount === 3,
+    });
+
     // Document services for table
     const selectedDocServices = data.documentServices.filter(s => s.selected);
     const documentServicesData = selectedDocServices.map(s => ({
