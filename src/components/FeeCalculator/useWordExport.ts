@@ -86,23 +86,47 @@ export function useWordExport() {
     // Tier thresholds (first $1M, $1M-$2M, $2M+)
     const tierThresholds = [0, 1000000, 2000000];
 
-    // Build fee scale description
+    // Build fee scale description (simple version)
     const feeScaleDescription = data.tierRates
       .slice(0, data.numberOfTiers)
       .map((rate) => `${rate}%`)
       .join(' / ');
 
-    // Build fee rate tiers table (showing the rate scale)
+    // Build detailed tier explanation for Note 2
+    // e.g., "1.2% on the first $1,000,000 and 0.7% on the balance above" (2 tiers)
+    // e.g., "1.2% on the first $1,000,000, 0.7% on the balance between $1,000,001 and $2,000,000 and 0.5% on the balance above $2,000,000" (3 tiers)
+    let tierExplanation = '';
+    const rates = data.tierRates.slice(0, data.numberOfTiers);
+    if (data.numberOfTiers === 2) {
+      tierExplanation = `${rates[0]}% on the first $1,000,000 and ${rates[1]}% on the balance above`;
+    } else if (data.numberOfTiers === 3) {
+      tierExplanation = `${rates[0]}% on the first $1,000,000, ${rates[1]}% on the balance between $1,000,001 and $2,000,000 and ${rates[2]}% on the balance above $2,000,000`;
+    } else if (data.numberOfTiers === 1) {
+      tierExplanation = `${rates[0]}% on the total balance`;
+    }
+
+    // Build fee rate tiers table (showing the rate scale) - Table 1A
     const feeRateTiers = data.tierRates.slice(0, data.numberOfTiers).map((rate, i) => {
-      const min = tierThresholds[i] || 0;
-      const max = tierThresholds[i + 1];
       let tierRange: string;
-      if (i === 0) {
-        tierRange = `First ${formatCurrency(max || 1000000)}`;
-      } else if (max) {
-        tierRange = `${formatCurrency(min)} - ${formatCurrency(max)}`;
+      if (data.numberOfTiers === 2) {
+        // 2 tiers: "First $1,000,000" and "$1,000,000+"
+        if (i === 0) {
+          tierRange = 'First $1,000,000';
+        } else {
+          tierRange = '$1,000,000+';
+        }
+      } else if (data.numberOfTiers === 3) {
+        // 3 tiers: "First $1,000,000", "$1,000,001 - $2,000,000", "$2,000,000+"
+        if (i === 0) {
+          tierRange = 'First $1,000,000';
+        } else if (i === 1) {
+          tierRange = '$1,000,001 - $2,000,000';
+        } else {
+          tierRange = '$2,000,000+';
+        }
       } else {
-        tierRange = `${formatCurrency(min)}+`;
+        // 1 tier or fallback
+        tierRange = 'All balances';
       }
       return {
         tierRange,
@@ -194,7 +218,7 @@ export function useWordExport() {
 
       // Ongoing advice fee
       ongoingAdviceFee: formatCurrency(data.feeBreakdown.ongoingFeeAmount),
-      ongoingAdviceFeePercent: formatPercent(data.feeBreakdown.ongoingFeePercent, 4),
+      ongoingAdviceFeePercent: formatPercent(data.feeBreakdown.ongoingFeePercent),
       totalShawFee: formatCurrency(data.feeBreakdown.shawAmount),
       totalBPFFee: formatCurrency(data.feeBreakdown.bpfAmount),
 
@@ -202,6 +226,7 @@ export function useWordExport() {
       feeTiers,
       feeRateTiers,
       feeScaleDescription,
+      tierExplanation,
       balanceCalculationNote: data.chargeAcceleratorFees === false
         ? 'The fee is calculated on your total portfolio balance, excluding cash in your Accelerator account.'
         : 'The fee is calculated on your total portfolio balance.',
@@ -275,12 +300,12 @@ export function useWordExport() {
       soaFeeDiscounted: formatCurrency(soaFeeDiscounted),
       soaFeeShaw: formatCurrency(soaFeeShaw),
       soaFeeBPF: formatCurrency(soaFeeBPF),
-      soaFeeDeductible: formatCurrency(soaFeeDiscounted),
+      soaFeeDeductible: '', // Left blank for user to input
 
       // Totals
       totalInitialFees: formatCurrency(data.documentServiceTotal + data.soaFee),
       totalOngoingFees: formatCurrency(totalOngoingFees),
-      totalOngoingPercent: formatPercent(data.feeBreakdown.ongoingFeePercent, 4),
+      totalOngoingPercent: formatPercent(data.feeBreakdown.ongoingFeePercent),
       totalOtherFees: formatCurrency(totalOtherFees),
       totalOtherPercent: data.portfolioTotals.feeableBalance > 0
         ? formatPercent((totalOtherFees / data.portfolioTotals.feeableBalance) * 100)
