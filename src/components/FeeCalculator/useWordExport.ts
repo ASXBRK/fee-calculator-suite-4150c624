@@ -326,11 +326,16 @@ export function useWordExport() {
       smaFee: formatCurrency(data.smaTotal),
       smaFeeType: data.smaStatus === 'new' ? 'Tiered %' : 'Fixed',
       smaTotalFee: formatCurrency(data.smaTotal),
-      smaTotalPercent: data.smaInvestedAmount > 0 ? formatPercent((data.smaTotal / data.smaInvestedAmount) * 100) : '',
+      // smaTotalPercent = (administrationFee + 60 + 150) / SMA balance
+      smaTotalPercent: data.smaInvestedAmount > 0 && data.smaFees
+        ? formatPercent(((data.smaFees.administrationFee || 0) + 60 + 150) / data.smaInvestedAmount * 100)
+        : '',
       smaAccountNote: `Based on ${data.smaAccountCount} SMA account(s).`,
       smaBalanceNote: `Based on estimated SMA balance of ${formatCurrency(data.smaInvestedAmount)}.`,
-      smaAdminFee: data.smaFees ? formatCurrency(data.smaFees.accountKeepingFee + data.smaFees.expenseRecoveryFee) : '',
-      smaAdminFeePercent: '',
+      // smaAdminFee = the tiered administration fee amount
+      smaAdminFee: data.smaFees ? formatCurrency(data.smaFees.administrationFee || 0) : '',
+      // smaAdminFeePercent = the tiered administration fee as a percentage
+      smaAdminFeePercent: data.smaFees ? formatPercent(data.smaFees.administrationPercent || 0) : '',
 
       // MER
       hasMER: data.includeMER === true,
