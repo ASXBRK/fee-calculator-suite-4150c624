@@ -146,6 +146,15 @@ export function useWordExport() {
       tierBPFFee: string;
     }> = [];
 
+    // Also build individual tier data for fixed table layouts
+    const tierData: Array<{
+      balance: number;
+      percent: number;
+      fee: number;
+      shawFee: number;
+      bpfFee: number;
+    }> = [];
+
     let remainingBalance = totalFeeableBalance;
     for (let i = 0; i < data.numberOfTiers; i++) {
       const tierMin = tierThresholds[i] || 0;
@@ -175,8 +184,23 @@ export function useWordExport() {
           tierShawFee: formatCurrency(tierFee * SHAW_SPLIT),
           tierBPFFee: formatCurrency(tierFee * BPF_SPLIT),
         });
+        tierData.push({
+          balance: balanceInTier,
+          percent: rate,
+          fee: tierFee,
+          shawFee: tierFee * SHAW_SPLIT,
+          bpfFee: tierFee * BPF_SPLIT,
+        });
       }
     }
+
+    // Count actual tiers used (based on balance, not settings)
+    const actualTierCount = feeTiers.length;
+
+    // Individual tier placeholders for fixed table layouts
+    const tier1 = tierData[0] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
+    const tier2 = tierData[1] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
+    const tier3 = tierData[2] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
 
     // Document services for table
     const selectedDocServices = data.documentServices.filter(s => s.selected);
@@ -230,6 +254,28 @@ export function useWordExport() {
       balanceCalculationNote: data.chargeAcceleratorFees === false
         ? 'The fee is calculated on your total portfolio balance, excluding cash in your Accelerator account.'
         : 'The fee is calculated on your total portfolio balance.',
+
+      // Tier count conditionals (based on actual balance, not settings)
+      hasOneTier: actualTierCount === 1,
+      hasTwoTiers: actualTierCount === 2,
+      hasThreeTiers: actualTierCount === 3,
+
+      // Individual tier data for fixed table layouts
+      tier1Balance: formatCurrency(tier1.balance),
+      tier1Percent: formatPercent(tier1.percent),
+      tier1Fee: formatCurrency(tier1.fee),
+      tier1ShawFee: formatCurrency(tier1.shawFee),
+      tier1BPFFee: formatCurrency(tier1.bpfFee),
+      tier2Balance: formatCurrency(tier2.balance),
+      tier2Percent: formatPercent(tier2.percent),
+      tier2Fee: formatCurrency(tier2.fee),
+      tier2ShawFee: formatCurrency(tier2.shawFee),
+      tier2BPFFee: formatCurrency(tier2.bpfFee),
+      tier3Balance: formatCurrency(tier3.balance),
+      tier3Percent: formatPercent(tier3.percent),
+      tier3Fee: formatCurrency(tier3.fee),
+      tier3ShawFee: formatCurrency(tier3.shawFee),
+      tier3BPFFee: formatCurrency(tier3.bpfFee),
 
       // Conditionals
       excludeAccelerator: data.chargeAcceleratorFees === false,
