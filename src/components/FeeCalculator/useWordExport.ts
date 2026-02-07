@@ -212,8 +212,8 @@ export function useWordExport() {
 
     // Prepare template data
     const templateData = {
-      // Main totals
-      totalBalance: formatCurrency(data.portfolioTotals.totalBalance),
+      // Main totals - totalBalance is the amount fees are calculated on (portfolios + contributions)
+      totalBalance: formatCurrency(data.portfolioTotals.feeableBalance),
       totalFeeableBalance: formatCurrency(data.portfolioTotals.feeableBalance),
 
       // Ongoing advice fee
