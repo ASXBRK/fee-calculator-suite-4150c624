@@ -202,6 +202,19 @@ export function useWordExport() {
     const tier2 = tierData[1] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
     const tier3 = tierData[2] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
 
+    // Debug logging
+    console.log('Tier data:', {
+      totalFeeableBalance,
+      actualTierCount,
+      numberOfTiers: data.numberOfTiers,
+      tier1Balance: tier1.balance,
+      tier2Balance: tier2.balance,
+      tier3Balance: tier3.balance,
+      hasOneTier: actualTierCount === 1,
+      hasTwoTiers: actualTierCount === 2,
+      hasThreeTiers: actualTierCount === 3,
+    });
+
     // Document services for table
     const selectedDocServices = data.documentServices.filter(s => s.selected);
     const documentServicesData = selectedDocServices.map(s => ({
@@ -313,11 +326,16 @@ export function useWordExport() {
       smaFee: formatCurrency(data.smaTotal),
       smaFeeType: data.smaStatus === 'new' ? 'Tiered %' : 'Fixed',
       smaTotalFee: formatCurrency(data.smaTotal),
-      smaTotalPercent: data.smaInvestedAmount > 0 ? formatPercent((data.smaTotal / data.smaInvestedAmount) * 100) : '',
+      // smaTotalPercent = (administrationFee + 60 + 150) / SMA balance
+      smaTotalPercent: data.smaInvestedAmount > 0 && data.smaFees
+        ? formatPercent(((data.smaFees.administrationFee || 0) + 60 + 150) / data.smaInvestedAmount * 100)
+        : '',
       smaAccountNote: `Based on ${data.smaAccountCount} SMA account(s).`,
       smaBalanceNote: `Based on estimated SMA balance of ${formatCurrency(data.smaInvestedAmount)}.`,
-      smaAdminFee: data.smaFees ? formatCurrency(data.smaFees.accountKeepingFee + data.smaFees.expenseRecoveryFee) : '',
-      smaAdminFeePercent: '',
+      // smaAdminFee = the tiered administration fee amount
+      smaAdminFee: data.smaFees ? formatCurrency(data.smaFees.administrationFee || 0) : '',
+      // smaAdminFeePercent = the tiered administration fee as a percentage
+      smaAdminFeePercent: data.smaFees ? formatPercent(data.smaFees.administrationPercent || 0) : '',
 
       // MER
       hasMER: data.includeMER === true,

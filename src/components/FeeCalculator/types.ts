@@ -120,9 +120,13 @@ export const SMA_FEE_TIERS: SMAFeeTier[] = [
 ];
 
 export interface SMAFees {
-  managedFundCustody: number;
+  administrationFee: number;
+  administrationPercent: number;
   accountKeepingFee: number;
   expenseRecoveryFee: number;
+  managedFundCustody: number;
+  total: number;
+  accountCount: number;
 }
 
 export const SMA_EXISTING_FEES: SMAFees = {
