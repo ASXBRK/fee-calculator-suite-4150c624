@@ -148,13 +148,17 @@ export function FeeCalculator() {
   const showAcceleratorInput = chargeAcceleratorFees === false;
 
   // Check if contributions are complete (all concessional have div293 answered)
-  const contributionsComplete = contributions.every(c => 
+  const contributionsComplete = contributions.every(c =>
     c.type !== 'concessional' || c.div293Applicable !== null
   );
   const hasContributionAmount = contributions.some(c => c.amount > 0);
 
   // Check if portfolio has been filled (balance > 0)
   const hasPortfolioBalance = portfolios.some(p => p.balance > 0);
+
+  // Check if there's any feeable balance (from portfolio OR contributions)
+  // This allows proceeding even with $0 portfolio if there are contributions
+  const hasFeeableBalance = hasPortfolioBalance || (hasContributionAmount && contributionsComplete);
 
   // Check if SMSF question has been answered
   const hasSMSFAnswer = isSMSF !== null;
@@ -332,17 +336,17 @@ export function FeeCalculator() {
             )}
 
             {/* Step 5: SMSF - Show after portfolio balance entered */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && (
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && (
               <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} customFees={customFees} setCustomFees={setCustomFees} useEstimate={useEstimate} setUseEstimate={setUseEstimate} />
             )}
 
             {/* Step 6: Document Services - Only show if Heffron is selected */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && administrator === 'heffron' && (
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && hasSMSFAnswer && administrator === 'heffron' && (
               <DocumentServicesCard services={documentServices} onToggle={toggleDocumentService} onQuantityChange={updateServiceQuantity} total={documentServiceTotal} />
             )}
 
             {/* Step 7: PAS/MPS - Show after SMSF answered */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && hasSMSFAnswer && (
               <PASMPSCard
                 hasPAS={hasPAS}
                 setHasPAS={setHasPAS}
@@ -364,7 +368,7 @@ export function FeeCalculator() {
             )}
 
             {/* Step 8: SMA - Show after PAS/MPS */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && hasSMSFAnswer && (
               <SMACard
                 smaStatus={smaStatus}
                 setSmaStatus={setSmaStatus}
@@ -380,7 +384,7 @@ export function FeeCalculator() {
             )}
 
             {/* Step 9: MER - Show after SMA */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (smaStatus !== null) && (
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && hasSMSFAnswer && (smaStatus !== null) && (
               <MERCard
                 includeMER={includeMER}
                 setIncludeMER={setIncludeMER}
@@ -394,7 +398,7 @@ export function FeeCalculator() {
             )}
 
             {/* Step 10: SOA Fee - Show after MER */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasPortfolioBalance && hasSMSFAnswer && (smaStatus !== null) && (includeMER !== null) && (
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && hasSMSFAnswer && (smaStatus !== null) && (includeMER !== null) && (
               <SOACard
                 includeSOA={includeSOA}
                 setIncludeSOA={setIncludeSOA}
@@ -411,7 +415,7 @@ export function FeeCalculator() {
           <div className="space-y-6">
             <div className="lg:sticky lg:top-8 space-y-6">
               <FeeBreakdownCard breakdown={feeBreakdown} />
-              {hasPortfolioBalance && (
+              {hasFeeableBalance && (
                 <>
                   <TotalFeesCard 
                     ongoingFee={feeBreakdown.ongoingFeeAmount} 
