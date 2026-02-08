@@ -348,6 +348,9 @@ export function useWordExport() {
       totalBalance: formatCurrency(data.portfolioTotals.feeableBalance),
       totalFeeableBalance: formatCurrency(data.portfolioTotals.feeableBalance),
 
+      // Entity name (dynamic from portfolio names)
+      entityName,
+
       // Ongoing advice fee
       ongoingAdviceFee: formatCurrency(data.feeBreakdown.ongoingFeeAmount),
       ongoingAdviceFeePercent: formatPercent(data.feeBreakdown.ongoingFeePercent),
