@@ -80,8 +80,22 @@ export function useWordExport() {
       ? data.smsfFees.administrationFee + data.smsfFees.auditFee + data.smsfFees.asicAgentFee
       : 0;
 
-    // Entity name based on number of portfolios
-    const entityName = data.portfolios.length > 1 ? "Investment Portfolio's" : "Investment Portfolio";
+    // Entity name based on portfolio names
+    // e.g., "SMSF Portfolio", "SMSF and Trust Portfolios", "SMSF, Trust and Personal Portfolios"
+    const portfolioNames = data.portfolios
+      .filter(p => p.balance > 0 || data.portfolios.length === 1)
+      .map(p => p.name);
+
+    let entityName: string;
+    if (portfolioNames.length === 0) {
+      entityName = 'Investment Portfolio';
+    } else if (portfolioNames.length === 1) {
+      entityName = `${portfolioNames[0]} Portfolio`;
+    } else {
+      // Multiple portfolios: "SMSF and Trust Portfolios" or "SMSF, Trust and Personal Portfolios"
+      const lastPortfolio = portfolioNames.pop();
+      entityName = `${portfolioNames.join(', ')} and ${lastPortfolio} Portfolios`;
+    }
 
     // Tier thresholds (first $1M, $1M-$2M, $2M+)
     const tierThresholds = [0, 1000000, 2000000];
