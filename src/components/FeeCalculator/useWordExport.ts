@@ -215,6 +215,87 @@ export function useWordExport() {
       hasThreeTiers: actualTierCount === 3,
     });
 
+    // Build dynamic balance calculation note
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Build portfolio descriptions
+    const portfoliosWithBalance = data.portfolios.filter(p => p.balance > 0);
+    const portfolioDescriptions: string[] = [];
+    let totalAcceleratorDeduction = 0;
+
+    for (const portfolio of portfoliosWithBalance) {
+      const portfolioName = portfolio.name.toLowerCase().includes('portfolio')
+        ? portfolio.name
+        : `${portfolio.name} portfolio`;
+
+      if (data.chargeAcceleratorFees === false && portfolio.acceleratorBalance > 0) {
+        // Fees NOT charged on accelerator - show balance less accelerator
+        portfolioDescriptions.push(
+          `${portfolioName} balance of ${formatCurrency(portfolio.balance)} less the accelerator balance of ${formatCurrency(portfolio.acceleratorBalance)}`
+        );
+        totalAcceleratorDeduction += portfolio.acceleratorBalance;
+      } else {
+        portfolioDescriptions.push(`${portfolioName} balance of ${formatCurrency(portfolio.balance)}`);
+      }
+    }
+
+    // Build contribution descriptions
+    const contributionDescriptions: string[] = [];
+    const rollovers = data.contributions.filter(c => c.type === 'rollover' && c.amount > 0);
+    const nccs = data.contributions.filter(c => c.type === 'ncc' && c.amount > 0);
+    const ccs = data.contributions.filter(c => c.type === 'concessional' && c.amount > 0);
+
+    // Add rollovers
+    for (const rollover of rollovers) {
+      contributionDescriptions.push(`rollover of ${formatCurrency(rollover.amount)}`);
+    }
+
+    // Add NCCs
+    for (const ncc of nccs) {
+      contributionDescriptions.push(`non-concessional contribution of ${formatCurrency(ncc.amount)}`);
+    }
+
+    // Add CCs with tax
+    for (const cc of ccs) {
+      const taxRate = cc.div293Applicable ? 0.30 : 0.15; // Div 293 is 30%, normal is 15%
+      const taxAmount = cc.amount * taxRate;
+      const taxType = cc.div293Applicable ? 'Division 293 tax' : 'contribution tax';
+      contributionDescriptions.push(
+        `concessional contribution of ${formatCurrency(cc.amount)} less ${taxType} of ${formatCurrency(taxAmount)}`
+      );
+    }
+
+    // Build the full note
+    let balanceCalculationNote = 'The fee is calculated on ';
+    const parts: string[] = [];
+
+    if (portfolioDescriptions.length > 0) {
+      // Join portfolios with "and" for the last one
+      if (portfolioDescriptions.length === 1) {
+        parts.push(`your ${portfolioDescriptions[0]} as at ${dateStr}`);
+      } else {
+        const lastPortfolio = portfolioDescriptions.pop();
+        parts.push(`your ${portfolioDescriptions.join(', ')} and ${lastPortfolio} as at ${dateStr}`);
+      }
+    }
+
+    if (contributionDescriptions.length > 0) {
+      // Join contributions
+      if (portfolioDescriptions.length > 0 || parts.length > 0) {
+        parts.push(`plus the ${contributionDescriptions.join(', ')}`);
+      } else {
+        // No portfolios, just contributions
+        parts.push(`the ${contributionDescriptions.join(', ')}`);
+      }
+    }
+
+    if (parts.length === 0) {
+      balanceCalculationNote = 'The fee is calculated on your total portfolio balance.';
+    } else {
+      balanceCalculationNote += parts.join(' ') + '.';
+    }
+
     // Document services for table
     const selectedDocServices = data.documentServices.filter(s => s.selected);
     const documentServicesData = selectedDocServices.map(s => ({
@@ -264,9 +345,7 @@ export function useWordExport() {
       feeRateTiers,
       feeScaleDescription,
       tierExplanation,
-      balanceCalculationNote: data.chargeAcceleratorFees === false
-        ? 'The fee is calculated on your total portfolio balance, excluding cash in your Accelerator account.'
-        : 'The fee is calculated on your total portfolio balance.',
+      balanceCalculationNote,
 
       // Tier count conditionals (based on actual balance, not settings)
       hasOneTier: actualTierCount === 1,
