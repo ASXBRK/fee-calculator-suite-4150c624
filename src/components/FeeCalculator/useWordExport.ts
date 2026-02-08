@@ -305,6 +305,8 @@ export function useWordExport() {
       // Document services
       documentServices: documentServicesData,
       heffronDocServices,
+      hasTrusteeCompanyEstablishment: selectedDocServices.some(s => s.id === 'trustee-company'),
+      hasSMSFEstablishment: selectedDocServices.some(s => s.id === 'smsf-establishment'),
       hasPensionEstablishment: selectedDocServices.some(s => s.id === 'pension-establishment'),
       hasCommutation: selectedDocServices.some(s => s.id === 'pension-commutation'),
       hasLumpSum: selectedDocServices.some(s => s.id === 'lump-sum'),
