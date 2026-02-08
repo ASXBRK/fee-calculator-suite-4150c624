@@ -391,12 +391,19 @@ export function useWordExport() {
       isSMSF: data.isSMSF === true,
       isHeffron: data.administrator === 'heffron',
       isRyans: data.administrator === 'ryans',
+      isOther: data.administrator === 'other',
       hasOngoingSMSFAdmin: data.isSMSF === true && data.smsfFees !== null,
       isEstimateSMSFAdmin: data.administrator === 'other',
 
       // SMSF
       smsfAdminFee: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee + data.smsfFees.auditFee) : '',
       smsfAdministrator: data.administrator === 'heffron' ? 'Heffron' : data.administrator === 'ryans' ? 'Ryans' : 'Your Administrator',
+
+      // Other administrator fees (custom fees entered by user)
+      otherAdminFee: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee) : '',
+      otherAuditFee: data.smsfFees ? formatCurrency(data.smsfFees.auditFee) : '',
+      otherASICFee: data.smsfFees ? formatCurrency(data.smsfFees.asicAgentFee) : '',
+      otherTotal: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee + data.smsfFees.auditFee + data.smsfFees.asicAgentFee) : '',
 
       // Document services
       documentServices: documentServicesData,
