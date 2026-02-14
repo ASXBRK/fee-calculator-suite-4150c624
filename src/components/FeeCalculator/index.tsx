@@ -112,6 +112,7 @@ export function FeeCalculator() {
         isGstExcluding,
         isSMSF,
         administrator,
+        useEstimate,
         // Additional data for template
         hasPAS,
         hasMPS,

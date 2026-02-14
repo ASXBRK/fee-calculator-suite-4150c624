@@ -18,6 +18,7 @@ interface ExportData {
   isGstExcluding: boolean;
   isSMSF: boolean | null;
   administrator: 'heffron' | 'ryans' | 'other' | null;
+  useEstimate: boolean; // For "Other" administrator - whether using estimate fees
   // Additional data
   hasPAS: boolean | null;
   hasMPS: boolean | null;
@@ -454,6 +455,18 @@ export function useWordExport() {
       otherAuditFee: data.smsfFees ? formatCurrency(data.smsfFees.auditFee) : '',
       otherASICFee: data.smsfFees ? formatCurrency(data.smsfFees.asicAgentFee) : '',
       otherTotal: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee + data.smsfFees.auditFee + data.smsfFees.asicAgentFee) : '',
+
+      // Other administrator estimate conditionals
+      isEstimateSMSF: data.administrator === 'other' && data.useEstimate === true,
+      isNotEstimateSMSF: data.administrator === 'other' && data.useEstimate === false,
+      // Intro text for Other administrator table
+      otherAdminIntro: data.useEstimate
+        ? 'The table below is an estimate only of your provider\'s fee schedule for their SMSF administration services.'
+        : 'The table below refers to your provider\'s fee schedule for their SMSF administration services.',
+      // Notes for Other administrator
+      otherAdminNote: data.useEstimate
+        ? 'The fees shown are included for completeness and may not be accurate. You should confirm with your provider for their current fee schedule.'
+        : 'The fee schedule is subject to change. Please refer to the provider for further details.',
 
       // Document services
       documentServices: documentServicesData,
