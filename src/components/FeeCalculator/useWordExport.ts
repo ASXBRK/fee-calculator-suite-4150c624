@@ -212,9 +212,50 @@ export function useWordExport() {
     const actualTierCount = feeTiers.length;
 
     // Individual tier placeholders for fixed table layouts
-    const tier1 = tierData[0] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
-    const tier2 = tierData[1] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
-    const tier3 = tierData[2] || { balance: 0, percent: 0, fee: 0, shawFee: 0, bpfFee: 0 };
+    // Calculate tier balances based on totalFeeableBalance (includes contributions)
+    // tier1Balance = totalBalance if 1 tier, or $1,000,000 if more
+    // tier2Balance = totalBalance - $1,000,000
+    // tier3Balance = totalBalance - $2,000,000
+    const tier1Balance = actualTierCount === 1
+      ? totalFeeableBalance
+      : Math.min(totalFeeableBalance, 1000000);
+    const tier2Balance = totalFeeableBalance > 1000000
+      ? (actualTierCount === 2 ? totalFeeableBalance - 1000000 : Math.min(totalFeeableBalance - 1000000, 1000000))
+      : 0;
+    const tier3Balance = totalFeeableBalance > 2000000
+      ? totalFeeableBalance - 2000000
+      : 0;
+
+    // Calculate tier fees based on correct balances
+    const tier1Rate = data.tierRates[0] || 0;
+    const tier2Rate = data.tierRates[1] || 0;
+    const tier3Rate = data.tierRates[2] || 0;
+
+    const tier1Fee = tier1Balance * (tier1Rate / 100);
+    const tier2Fee = tier2Balance * (tier2Rate / 100);
+    const tier3Fee = tier3Balance * (tier3Rate / 100);
+
+    const tier1 = {
+      balance: tier1Balance,
+      percent: tier1Rate,
+      fee: tier1Fee,
+      shawFee: tier1Fee * SHAW_SPLIT,
+      bpfFee: tier1Fee * BPF_SPLIT,
+    };
+    const tier2 = {
+      balance: tier2Balance,
+      percent: tier2Rate,
+      fee: tier2Fee,
+      shawFee: tier2Fee * SHAW_SPLIT,
+      bpfFee: tier2Fee * BPF_SPLIT,
+    };
+    const tier3 = {
+      balance: tier3Balance,
+      percent: tier3Rate,
+      fee: tier3Fee,
+      shawFee: tier3Fee * SHAW_SPLIT,
+      bpfFee: tier3Fee * BPF_SPLIT,
+    };
 
     // Debug logging
     console.log('Tier data:', {
@@ -443,9 +484,11 @@ export function useWordExport() {
       smaFee: formatCurrency(data.smaTotal),
       // smaFeeType - actual % for new SMA, "Fixed" for existing
       smaFeeType: data.smaStatus === 'new'
-        ? (data.smaInvestedAmount > 0
-          ? formatPercent((data.smaTotal / data.smaInvestedAmount) * 100)
-          : '')
+        ? (data.smaInvestedAmount > 0 && data.smaFees
+          ? formatPercent(((data.smaFees.administrationFee || 0) + 60 + 150) / data.smaInvestedAmount * 100)
+          : (data.smaTotal > 0 && data.smaInvestedAmount > 0
+            ? formatPercent((data.smaTotal / data.smaInvestedAmount) * 100)
+            : 'Tiered'))
         : 'Fixed',
       smaTotalFee: formatCurrency(data.smaTotal),
       // smaTotalPercent = (administrationFee + 60 + 150) / SMA balance
