@@ -572,6 +572,8 @@ export function useWordExport() {
       otherAdminIntro: templateData.otherAdminIntro,
       otherAdminNote: templateData.otherAdminNote,
     });
+    // Temporary alert for debugging
+    alert(`Debug: administrator=${data.administrator}, useEstimate=${data.useEstimate}\notherAdminIntro=${templateData.otherAdminIntro?.substring(0, 50)}...`);
 
     // Render the document
     doc.render(templateData);
