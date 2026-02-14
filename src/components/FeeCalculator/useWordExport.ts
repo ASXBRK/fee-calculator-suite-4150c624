@@ -564,6 +564,15 @@ export function useWordExport() {
         : '',
     };
 
+    // Debug: Log Other admin placeholders
+    console.log('Other Admin Debug:', {
+      administrator: data.administrator,
+      useEstimate: data.useEstimate,
+      isOther: data.administrator === 'other',
+      otherAdminIntro: templateData.otherAdminIntro,
+      otherAdminNote: templateData.otherAdminNote,
+    });
+
     // Render the document
     doc.render(templateData);
 
