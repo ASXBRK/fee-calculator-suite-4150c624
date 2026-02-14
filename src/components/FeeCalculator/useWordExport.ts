@@ -431,17 +431,21 @@ export function useWordExport() {
       portfolioServiceTitle: data.hasPAS ? 'Portfolio Administration Service' : data.hasMPS ? 'Managed Portfolio Service' : '',
       isExistingPortfolioService: (data.hasPAS && data.pasItems.some(i => i.isNew === false)) || (data.hasMPS && data.mpsItems.some(i => i.isNew === false)),
       isNewPortfolioService: (data.hasPAS && data.pasItems.some(i => i.isNew === true)) || (data.hasMPS && data.mpsItems.some(i => i.isNew === true)),
-      portfolioServiceAccountNote: `Based on ${data.pasItems.length + data.mpsItems.length} account(s).`,
+      // portfolioServiceAccountNote - blank if 1 account, show count if more than 1
+      portfolioServiceAccountNote: (data.pasItems.length + data.mpsItems.length) > 1
+        ? `Based on ${data.pasItems.length + data.mpsItems.length} accounts.`
+        : '',
 
       // SMA
       hasSMA: data.smaStatus === 'new' || data.smaStatus === 'existing',
       isExistingSMA: data.smaStatus === 'existing',
       isNewSMA: data.smaStatus === 'new',
       smaFee: formatCurrency(data.smaTotal),
+      // smaFeeType - actual % for new SMA, "Fixed" for existing
       smaFeeType: data.smaStatus === 'new'
-        ? (data.smaInvestedAmount > 0 && data.smaFees
-          ? formatPercent(((data.smaFees.administrationFee || 0) + 60 + 150) / data.smaInvestedAmount * 100)
-          : 'Tiered %')
+        ? (data.smaInvestedAmount > 0
+          ? formatPercent((data.smaTotal / data.smaInvestedAmount) * 100)
+          : '')
         : 'Fixed',
       smaTotalFee: formatCurrency(data.smaTotal),
       // smaTotalPercent = (administrationFee + 60 + 150) / SMA balance
