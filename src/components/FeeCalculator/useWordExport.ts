@@ -354,17 +354,24 @@ export function useWordExport() {
 
     // Document services for table
     const selectedDocServices = data.documentServices.filter(s => s.selected);
+    const docServiceProvider = data.administrator === 'heffron' ? 'Heffron' : data.administrator === 'ryans' ? 'Ryans' : 'Provider';
     const documentServicesData = selectedDocServices.map(s => ({
       serviceName: s.name,
       serviceFee: formatCurrency(s.fee * s.quantity),
-      servicePaidTo: 'Heffron',
+      servicePaidTo: docServiceProvider,
     }));
 
-    // Heffron doc services (same as document services for now)
-    const heffronDocServices = selectedDocServices.map(s => ({
+    // Heffron doc services
+    const heffronDocServices = data.administrator === 'heffron' ? selectedDocServices.map(s => ({
       docServiceName: s.name,
       docServiceFee: formatCurrency(s.fee * s.quantity),
-    }));
+    })) : [];
+
+    // Ryans doc services
+    const ryansDocServices = data.administrator === 'ryans' ? selectedDocServices.map(s => ({
+      docServiceName: s.name,
+      docServiceFee: formatCurrency(s.fee * s.quantity),
+    })) : [];
 
     // Calculate totals
     const totalOngoingFees = data.feeBreakdown.ongoingFeeAmount + data.pasMpsTotal + data.smaTotal;
@@ -471,12 +478,22 @@ export function useWordExport() {
       // Document services
       documentServices: documentServicesData,
       heffronDocServices,
+      ryansDocServices,
+      hasDocumentServices: selectedDocServices.length > 0,
+      hasHeffronDocServices: data.administrator === 'heffron' && selectedDocServices.length > 0,
+      hasRyansDocServices: data.administrator === 'ryans' && selectedDocServices.length > 0,
+      documentServicesTotal: formatCurrency(data.documentServiceTotal),
+      documentServicesProvider: docServiceProvider,
+      // Heffron-specific conditionals
       hasTrusteeCompanyEstablishment: selectedDocServices.some(s => s.id === 'trustee-company'),
       hasSMSFEstablishment: selectedDocServices.some(s => s.id === 'smsf-establishment'),
       hasPensionEstablishment: selectedDocServices.some(s => s.id === 'pension-establishment'),
       hasCommutation: selectedDocServices.some(s => s.id === 'pension-commutation'),
       hasLumpSum: selectedDocServices.some(s => s.id === 'lump-sum'),
       hasContributionSplitting: selectedDocServices.some(s => s.id === 'contribution-splitting'),
+      // Ryans-specific conditionals (same IDs, just for Ryans)
+      hasRyansTrusteeCompany: data.administrator === 'ryans' && selectedDocServices.some(s => s.id === 'trustee-company'),
+      hasRyansSMSFEstablishment: data.administrator === 'ryans' && selectedDocServices.some(s => s.id === 'smsf-establishment'),
 
       // Portfolio Service (PAS/MPS)
       hasPortfolioService: data.hasPAS === true || data.hasMPS === true,

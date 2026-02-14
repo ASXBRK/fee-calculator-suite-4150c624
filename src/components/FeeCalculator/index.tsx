@@ -341,8 +341,8 @@ export function FeeCalculator() {
               <SMSFFeesCard isSMSF={isSMSF} setIsSMSF={setIsSMSF} administrator={administrator} setAdministrator={setAdministrator} fees={smsfFees} customFees={customFees} setCustomFees={setCustomFees} useEstimate={useEstimate} setUseEstimate={setUseEstimate} />
             )}
 
-            {/* Step 6: Document Services - Only show if Heffron is selected */}
-            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && hasSMSFAnswer && administrator === 'heffron' && (
+            {/* Step 6: Document Services - Show for Heffron or Ryans */}
+            {hasTierConfiguration && hasAcceleratorAnswer && contributionsComplete && hasFeeableBalance && hasSMSFAnswer && (administrator === 'heffron' || administrator === 'ryans') && (
               <DocumentServicesCard services={documentServices} onToggle={toggleDocumentService} onQuantityChange={updateServiceQuantity} total={documentServiceTotal} />
             )}
 

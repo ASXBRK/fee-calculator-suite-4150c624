@@ -94,7 +94,7 @@ export const RYANS_SMSF_FEES: SMSFFees = {
   asicAgentFee: 200,
 };
 
-export const DOCUMENT_SERVICES: DocumentService[] = [
+export const HEFFRON_DOCUMENT_SERVICES: DocumentService[] = [
   { id: 'smsf-establishment', name: 'SMSF Establishment Service', fee: 550, selected: false, quantity: 1 },
   { id: 'trustee-company', name: 'SMSF Trustee Company Establishment', fee: 990, selected: false, quantity: 1 },
   { id: 'pension-establishment', name: 'Pension Establishment', fee: 330, selected: false, quantity: 1 },
@@ -102,6 +102,14 @@ export const DOCUMENT_SERVICES: DocumentService[] = [
   { id: 'lump-sum', name: 'Lump Sum from Accumulation', fee: 165, selected: false, quantity: 1 },
   { id: 'contribution-splitting', name: 'Contribution Splitting', fee: 165, selected: false, quantity: 1 },
 ];
+
+export const RYANS_DOCUMENT_SERVICES: DocumentService[] = [
+  { id: 'smsf-establishment', name: 'SMSF Establishment Service', fee: 550, selected: false, quantity: 1 },
+  { id: 'trustee-company', name: 'SMSF Trustee Company Establishment', fee: 990, selected: false, quantity: 1 },
+];
+
+// Legacy alias for backward compatibility
+export const DOCUMENT_SERVICES = HEFFRON_DOCUMENT_SERVICES;
 
 // SMA Types
 export type SMAStatus = 'na' | 'new' | 'existing' | null;

@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { 
-  Portfolio, 
+import {
+  Portfolio,
   Contribution,
-  DocumentService, 
-  FeeBreakdown, 
+  DocumentService,
+  FeeBreakdown,
   FeeTier,
   Administrator,
   SMSFFees,
@@ -11,11 +11,12 @@ import {
   SMAStatus,
   DEFAULT_PASMPS_FEES,
   MINIMUM_ADVICE_FEES,
-  SHAW_SPLIT, 
-  BPF_SPLIT, 
+  SHAW_SPLIT,
+  BPF_SPLIT,
   HEFFRON_SMSF_FEES,
   RYANS_SMSF_FEES,
-  DOCUMENT_SERVICES,
+  HEFFRON_DOCUMENT_SERVICES,
+  RYANS_DOCUMENT_SERVICES,
   SMA_FEE_TIERS,
   SMA_EXISTING_FEES,
   MER_ESTIMATE_PERCENTAGE,
@@ -61,7 +62,15 @@ export function useCalculator() {
     { id: '1', isNew: null }
   ]);
   
-  const [documentServices, setDocumentServices] = useState<DocumentService[]>(DOCUMENT_SERVICES);
+  const [heffronDocumentServices, setHeffronDocumentServices] = useState<DocumentService[]>(HEFFRON_DOCUMENT_SERVICES);
+  const [ryansDocumentServices, setRyansDocumentServices] = useState<DocumentService[]>(RYANS_DOCUMENT_SERVICES);
+
+  // Get current document services based on administrator
+  const documentServices = useMemo(() => {
+    if (administrator === 'heffron') return heffronDocumentServices;
+    if (administrator === 'ryans') return ryansDocumentServices;
+    return [];
+  }, [administrator, heffronDocumentServices, ryansDocumentServices]);
 
   // SMA settings
   const [smaStatus, setSmaStatus] = useState<SMAStatus>(null);
@@ -190,15 +199,27 @@ export function useCalculator() {
   };
 
   const toggleDocumentService = (id: string) => {
-    setDocumentServices(documentServices.map(s => 
-      s.id === id ? { ...s, selected: !s.selected } : s
-    ));
+    if (administrator === 'heffron') {
+      setHeffronDocumentServices(heffronDocumentServices.map(s =>
+        s.id === id ? { ...s, selected: !s.selected } : s
+      ));
+    } else if (administrator === 'ryans') {
+      setRyansDocumentServices(ryansDocumentServices.map(s =>
+        s.id === id ? { ...s, selected: !s.selected } : s
+      ));
+    }
   };
 
   const updateServiceQuantity = (id: string, quantity: number) => {
-    setDocumentServices(documentServices.map(s => 
-      s.id === id ? { ...s, quantity: Math.max(1, quantity) } : s
-    ));
+    if (administrator === 'heffron') {
+      setHeffronDocumentServices(heffronDocumentServices.map(s =>
+        s.id === id ? { ...s, quantity: Math.max(1, quantity) } : s
+      ));
+    } else if (administrator === 'ryans') {
+      setRyansDocumentServices(ryansDocumentServices.map(s =>
+        s.id === id ? { ...s, quantity: Math.max(1, quantity) } : s
+      ));
+    }
   };
 
   const calculateTieredFee = (balance: number): { fee: number; breakdown: { tier: number; amount: number; rate: number; fee: number }[] } => {
@@ -315,13 +336,18 @@ export function useCalculator() {
   }, [isSMSF, administrator, customFees]);
 
   const documentServiceTotal = useMemo(() => {
-    // Only show document services for Heffron
-    if (administrator !== 'heffron') return 0;
-    
-    return documentServices
-      .filter(s => s.selected)
-      .reduce((sum, s) => sum + (s.fee * s.quantity), 0);
-  }, [documentServices, administrator]);
+    // Document services for Heffron or Ryans
+    if (administrator === 'heffron') {
+      return heffronDocumentServices
+        .filter(s => s.selected)
+        .reduce((sum, s) => sum + (s.fee * s.quantity), 0);
+    } else if (administrator === 'ryans') {
+      return ryansDocumentServices
+        .filter(s => s.selected)
+        .reduce((sum, s) => sum + (s.fee * s.quantity), 0);
+    }
+    return 0;
+  }, [heffronDocumentServices, ryansDocumentServices, administrator]);
 
   const pasMpsTotal = useMemo(() => {
     let total = 0;
