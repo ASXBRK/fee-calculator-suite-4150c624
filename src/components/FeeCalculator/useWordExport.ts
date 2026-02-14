@@ -524,8 +524,14 @@ export function useWordExport() {
 
       // SOA Fee
       hasSOAFee: data.includeSOA === true && data.soaFee > 0,
-      soaFeeType: 'Statement of Advice',
-      soaFeeAmount: formatCurrency(data.soaFee),
+      // soaFeeType: "Nil" if no SOA, "Discounted" if discount > 0, "Fixed" if no discount
+      soaFeeType: (!data.includeSOA || data.soaFee === 0)
+        ? 'Nil'
+        : (data.soaDiscount > 0 ? 'Discounted' : 'Fixed'),
+      // soaFeeAmount: "Nil" if no SOA fee, otherwise formatted amount
+      soaFeeAmount: (!data.includeSOA || data.soaFee === 0)
+        ? 'Nil'
+        : formatCurrency(data.soaFee),
       soaFeePaidTo: 'Shaw/BPF',
       soaFeeFullAmount: formatCurrency(soaFeeFullAmount),
       soaFeeDiscounted: formatCurrency(soaFeeDiscounted),
