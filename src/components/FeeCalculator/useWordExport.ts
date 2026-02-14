@@ -18,6 +18,7 @@ interface ExportData {
   isGstExcluding: boolean;
   isSMSF: boolean | null;
   administrator: 'heffron' | 'ryans' | 'other' | null;
+  useEstimate: boolean; // For "Other" administrator - whether using estimate fees
   // Additional data
   hasPAS: boolean | null;
   hasMPS: boolean | null;
@@ -353,17 +354,24 @@ export function useWordExport() {
 
     // Document services for table
     const selectedDocServices = data.documentServices.filter(s => s.selected);
+    const docServiceProvider = data.administrator === 'heffron' ? 'Heffron' : data.administrator === 'ryans' ? 'Ryans' : 'Provider';
     const documentServicesData = selectedDocServices.map(s => ({
       serviceName: s.name,
       serviceFee: formatCurrency(s.fee * s.quantity),
-      servicePaidTo: 'Heffron',
+      servicePaidTo: docServiceProvider,
     }));
 
-    // Heffron doc services (same as document services for now)
-    const heffronDocServices = selectedDocServices.map(s => ({
+    // Heffron doc services
+    const heffronDocServices = data.administrator === 'heffron' ? selectedDocServices.map(s => ({
       docServiceName: s.name,
       docServiceFee: formatCurrency(s.fee * s.quantity),
-    }));
+    })) : [];
+
+    // Ryans doc services
+    const ryansDocServices = data.administrator === 'ryans' ? selectedDocServices.map(s => ({
+      docServiceName: s.name,
+      docServiceFee: formatCurrency(s.fee * s.quantity),
+    })) : [];
 
     // Calculate totals
     const totalOngoingFees = data.feeBreakdown.ongoingFeeAmount + data.pasMpsTotal + data.smaTotal;
@@ -455,15 +463,37 @@ export function useWordExport() {
       otherASICFee: data.smsfFees ? formatCurrency(data.smsfFees.asicAgentFee) : '',
       otherTotal: data.smsfFees ? formatCurrency(data.smsfFees.administrationFee + data.smsfFees.auditFee + data.smsfFees.asicAgentFee) : '',
 
+      // Other administrator estimate conditionals
+      isEstimateSMSF: data.administrator === 'other' && data.useEstimate === true,
+      isNotEstimateSMSF: data.administrator === 'other' && data.useEstimate === false,
+      // Intro text for Other administrator table
+      otherAdminIntro: data.useEstimate
+        ? 'The table below is an estimate only of your provider\'s fee schedule for their SMSF administration services.'
+        : 'The table below refers to your provider\'s fee schedule for their SMSF administration services.',
+      // Notes for Other administrator
+      otherAdminNote: data.useEstimate
+        ? 'The fees shown are included for completeness and may not be accurate. You should confirm with your provider for their current fee schedule.'
+        : 'The fee schedule is subject to change. Please refer to the provider for further details.',
+
       // Document services
       documentServices: documentServicesData,
       heffronDocServices,
+      ryansDocServices,
+      hasDocumentServices: selectedDocServices.length > 0,
+      hasHeffronDocServices: data.administrator === 'heffron' && selectedDocServices.length > 0,
+      hasRyansDocServices: data.administrator === 'ryans' && selectedDocServices.length > 0,
+      documentServicesTotal: formatCurrency(data.documentServiceTotal),
+      documentServicesProvider: docServiceProvider,
+      // Heffron-specific conditionals
       hasTrusteeCompanyEstablishment: selectedDocServices.some(s => s.id === 'trustee-company'),
       hasSMSFEstablishment: selectedDocServices.some(s => s.id === 'smsf-establishment'),
       hasPensionEstablishment: selectedDocServices.some(s => s.id === 'pension-establishment'),
       hasCommutation: selectedDocServices.some(s => s.id === 'pension-commutation'),
       hasLumpSum: selectedDocServices.some(s => s.id === 'lump-sum'),
       hasContributionSplitting: selectedDocServices.some(s => s.id === 'contribution-splitting'),
+      // Ryans-specific conditionals (same IDs, just for Ryans)
+      hasRyansTrusteeCompany: data.administrator === 'ryans' && selectedDocServices.some(s => s.id === 'trustee-company'),
+      hasRyansSMSFEstablishment: data.administrator === 'ryans' && selectedDocServices.some(s => s.id === 'smsf-establishment'),
 
       // Portfolio Service (PAS/MPS)
       hasPortfolioService: data.hasPAS === true || data.hasMPS === true,
@@ -550,6 +580,7 @@ export function useWordExport() {
         ? formatPercent((totalOtherFees / data.portfolioTotals.feeableBalance) * 100)
         : '',
     };
+
 
     // Render the document
     doc.render(templateData);
