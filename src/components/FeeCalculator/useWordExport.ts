@@ -335,10 +335,19 @@ export function useWordExport() {
     const soaFeeBPF = soaFeeDiscounted * BPF_SPLIT;
 
     // MER entities - single row with entity name
+    // entityMERPercent = entityMERFee / entityBalance
+    const entityMERPercent = data.portfolioTotals.feeableBalance > 0
+      ? formatPercent((data.merFee / data.portfolioTotals.feeableBalance) * 100)
+      : formatPercent(data.merPercentage);
+    // merEstimatedPercent = merEstimatedFee / merEstimatedBalance
+    const merEstimatedPercent = data.portfolioTotals.feeableBalance > 0
+      ? formatPercent((data.merFee / data.portfolioTotals.feeableBalance) * 100)
+      : formatPercent(data.merPercentage);
+
     const merEntities = data.includeMER ? [{
       entityName,
       entityBalance: formatCurrency(data.portfolioTotals.feeableBalance),
-      entityMERPercent: formatPercent(data.merPercentage),
+      entityMERPercent,
       entityMERFee: formatCurrency(data.merFee),
     }] : [];
 
@@ -429,7 +438,11 @@ export function useWordExport() {
       isExistingSMA: data.smaStatus === 'existing',
       isNewSMA: data.smaStatus === 'new',
       smaFee: formatCurrency(data.smaTotal),
-      smaFeeType: data.smaStatus === 'new' ? 'Tiered %' : 'Fixed',
+      smaFeeType: data.smaStatus === 'new'
+        ? (data.smaInvestedAmount > 0 && data.smaFees
+          ? formatPercent(((data.smaFees.administrationFee || 0) + 60 + 150) / data.smaInvestedAmount * 100)
+          : 'Tiered %')
+        : 'Fixed',
       smaTotalFee: formatCurrency(data.smaTotal),
       // smaTotalPercent = (administrationFee + 60 + 150) / SMA balance
       smaTotalPercent: data.smaInvestedAmount > 0 && data.smaFees
@@ -446,16 +459,18 @@ export function useWordExport() {
       hasMER: data.includeMER === true,
       isKnownMER: data.merKnown === true,
       isEstimateMER: data.merKnown === false,
-      merPercent: formatPercent(data.merPercentage),
+      // merPercent = entityMERPercent if known, merEstimatedPercent if estimate
+      merPercent: data.merKnown ? entityMERPercent : merEstimatedPercent,
       merFee: formatCurrency(data.merFee),
       merTotalFee: formatCurrency(data.merFee),
-      merTotalPercent: formatPercent(data.merPercentage),
+      merTotalPercent: data.merKnown ? entityMERPercent : merEstimatedPercent,
       merTotalValue: formatCurrency(data.portfolioTotals.feeableBalance),
       merCalculationNote: 'Investment management costs are charged by fund managers on your investments.',
       merEstimateNote: 'This is an estimate based on typical managed fund fees.',
       merEntityName: entityName,
       merEstimatedBalance: formatCurrency(data.portfolioTotals.feeableBalance),
-      merEstimatedPercent: formatPercent(data.merPercentage),
+      // merEstimatedPercent = merEstimatedFee / balance
+      merEstimatedPercent,
       merEstimatedFee: formatCurrency(data.merFee),
       merEntities,
       merHoldings: [],
@@ -474,7 +489,9 @@ export function useWordExport() {
       // Totals
       totalInitialFees: formatCurrency(data.documentServiceTotal + data.soaFee),
       totalOngoingFees: formatCurrency(totalOngoingFees),
-      totalOngoingPercent: formatPercent(data.feeBreakdown.ongoingFeePercent),
+      totalOngoingPercent: data.portfolioTotals.feeableBalance > 0
+        ? formatPercent((totalOngoingFees / data.portfolioTotals.feeableBalance) * 100)
+        : '',
       totalOtherFees: formatCurrency(totalOtherFees),
       totalOtherPercent: data.portfolioTotals.feeableBalance > 0
         ? formatPercent((totalOtherFees / data.portfolioTotals.feeableBalance) * 100)
