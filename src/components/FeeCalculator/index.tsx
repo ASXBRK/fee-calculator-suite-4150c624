@@ -180,7 +180,7 @@ export function FeeCalculator() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/')}
             className="mb-4 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

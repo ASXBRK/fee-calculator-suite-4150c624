@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Calculator, GitBranch } from 'lucide-react';
@@ -38,14 +37,6 @@ function AppCard({ title, description, icon, href, available = true }: AppCardPr
 }
 
 export default function HomePage() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem('authenticated');
-    if (!isAuthenticated) {
-      navigate('/');
-    }
-  }, [navigate]);
 
   const apps = [
     {
